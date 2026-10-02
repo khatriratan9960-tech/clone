@@ -70,6 +70,15 @@ function revealFor(raw, status) {
     const hasAll = open != null && close != null && jodi != null && jodi !== '';
     const hasPair = open != null && close != null;
 
+    // NOTE ON FIELD NAMES: the upstream feed names its two-digit number
+    // "close" and its three-digit panna "jodi" - the opposite of this
+    // project's own vocabulary, where `jodi` is the two-digit join of the
+    // two halves. So `close` here holds the JODI and `jodi` holds the CLOSE
+    // PANA. Interpolating them in this order therefore produces
+    // "openPana-jodi-closePana" (e.g. 257-48-369), which is the same
+    // "open-jodi-close" order buildDisplay() produces for custom markets.
+    // The names are misleading; the output is correct. Do not "fix" this
+    // by swapping the variables - swap the fixture field names instead.
     if (hasAll) return { result: `${open}-${close}-${jodi}`, ank: ankOf(`${jodi}`) };
     if (hasPair) return { result: `${open}-${close}`, ank: ankOf(`${close}`) };
     if (jodi != null && jodi !== '') return { result: String(jodi), ank: ankOf(String(jodi)) };

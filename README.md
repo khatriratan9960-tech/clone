@@ -175,7 +175,7 @@ Two things it fixes at the same time:
 Provider markets are untouched - their results come from the upstream API and
 are gated by `liveBoard.js` on the same clock.
 
-Run `node verify-timing.mjs` to see the whole schedule asserted (22 checks),
+Run `node verify-timing.mjs` to see the whole schedule asserted (26 checks),
 including midnight-wrapping markets such as 22:00 -> 00:30.
 
 ### LIVE RESULT lists markets due within 10 minutes
@@ -204,6 +204,34 @@ Details:
 - Tune the window with `LIVE_IMMINENT_MINUTES` (default `10`).
 - The `SOON` tag reuses the existing `LIVE` badge styling in
   `src/components/LiveResults.jsx`, so it matches the original site's look.
+
+### The full sequence on the public site
+
+Every market - provider or custom - walks the same four stages, driven purely
+by the clock. `verify-timing.mjs` asserts each one.
+
+| Stage | LIVE RESULT shows | Badge |
+|---|---|---|
+| 10 min or less before the open | `Loading...` | `SOON` |
+| at the open time | the open panna + its ank, e.g. `257-4` | `LIVE` |
+| between open and close | the open panna + its ank | `LIVE` |
+| at and after the close time | the full result, `openPana-jodi-closePana` e.g. `257-48-369` | - |
+
+A close pana that was declared early is never shown before its close time -
+only the open half appears while the window is open.
+
+#### A naming trap in the provider data
+
+The upstream feed calls its **two-digit** number `close` and its
+**three-digit** panna `jodi` - the opposite of this project's own vocabulary,
+where `jodi` is the two-digit join of the two halves. So for provider rows,
+`close` holds the jodi and `jodi` holds the close panna.
+
+Both paths still produce the **same** `open-jodi-close` output
+(`257-48-369`), verified by a test that renders the same draw through both
+paths and compares them. Do not "fix" the interpolation in
+`liveBoard.js:revealFor()` by swapping those two variables - that would invert
+the result. Fix the fixture field names instead.
 
 
 

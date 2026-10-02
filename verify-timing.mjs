@@ -11,7 +11,7 @@
  */
 import { revealCustom } from './server/services/customReveal.js';
 import { mergeMarkets } from './server/services/mergeMarkets.js';
-import { buildLiveBoard } from './server/services/liveBoard.js';
+import { buildLiveBoard, toLiveCard } from './server/services/liveBoard.js';
 
 const results = [];
 function check(name, cond, extra = '') {
@@ -168,6 +168,58 @@ check(
   nightLater.status === 'upcoming' && nightLater.result === null,
   `01:00 status=${nightLater.status} result=${nightLater.result}`
 );
+
+// --- 17. The full public sequence, end to end, for a PROVIDER market.
+// 10 min before -> Loading... ; at open -> open panna ; at close -> full.
+{
+  // Upstream naming: "close" is the 2-digit jodi, "jodi" is the 3-digit panna.
+  const m = { market: 'SEQ', open: '257', close: '48', jodi: '369', openTime: '09:15 AM', closeTime: '09:45 AM' };
+  const at = (mins) => toLiveCard(m, mins);
+
+  const before = at(hm('09:05'));
+  check(
+    'provider 10 min before open -> Loading...',
+    before.status === 'upcoming' && before.isImminent === true && before.result === null,
+    `status=${before.status} imminent=${before.isImminent}`
+  );
+
+  const opened = at(hm('09:15'));
+  check(
+    'provider at open -> open panna + ank',
+    opened.status === 'live' && opened.result === '257-4',
+    `result=${opened.result}`
+  );
+
+  const closed = at(hm('09:45'));
+  check(
+    'provider at close -> open-jodi-close',
+    closed.status === 'closed' && closed.result === '257-48-369',
+    `result=${closed.result}`
+  );
+}
+
+// --- 18. Both paths must use the SAME "open-jodi-close" ordering.
+{
+  const custom = mergeMarkets(
+    [],
+    [{ _id: 'c1', name: 'CUSTOM', slug: 'custom', openTime: '09:15', closeTime: '09:45' }],
+    new Map([['c1', { open: { number: '4', pana: '257' }, close: { number: '8', pana: '369' } }]]),
+    hm('09:45')
+  )[0];
+
+  // Same draw, expressed in upstream field naming.
+  const provider = toLiveCard(
+    { market: 'PROVIDER', open: '257', close: '48', jodi: '369', openTime: '09:15 AM', closeTime: '09:45 AM' },
+    hm('09:45')
+  );
+
+  check(
+    'custom and provider agree on ordering',
+    custom.result === provider.result,
+    `custom=${custom.result} provider=${provider.result}`
+  );
+}
+
 // --- 12. IMMINENT: a market due within 10 min is listed on the board. ---
 // Market opens 21:15. At 21:10 only 5 minutes remain, so it must already
 // appear on the live board instead of being buried under every other
