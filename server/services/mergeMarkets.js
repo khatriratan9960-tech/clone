@@ -8,6 +8,7 @@
  */
 
 import { toMinutes, to12Hour, nowMinutes, publicStatus } from './marketClock.js';
+import { revealCustom } from './customReveal.js';
 
 // Re-exported so existing callers keep working from this module.
 export { toMinutes, to12Hour };
@@ -62,25 +63,35 @@ function normalizeProvider(raw, now) {
   };
 }
 
-/** Shape one of the operator's markets + its declared result. */
-function normalizeCustom(market, result, now) {
-  // `display` is precomputed server-side when both halves exist, so the
-  // public shape matches provider markets exactly.
-  const display = result?.display ?? null;
+/**
+ * Shape one of the operator's markets + its declared halves.
+ *
+ * The reveal is CLOCK-GATED (customReveal.js): whatever the operator has
+ * declared early stays hidden until the market's window actually reaches it,
+ * so the public page can never show a result before its scheduled time.
+ */
+function normalizeCustom(market, halves, now) {
   const openM = toMinutes(market.openTime);
   const closeM = toMinutes(market.closeTime);
+
+  const { status, result, ank, jodi, openRow } = revealCustom(
+    market,
+    halves?.open ?? null,
+    halves?.close ?? null,
+    now
+  );
 
   return {
     market: market.name,
     slug: market.slug,
-    open: result?.pana ?? null,
+    open: openRow?.pana ?? null,
     close: null,
-    jodi: result?.jodi ?? null,
-    result: display,
+    jodi: jodi ?? null,
+    result,
     openTime: to12Hour(openM),
     closeTime: to12Hour(closeM),
-    ank: result?.ank ?? ankOf(display),
-    status: publicStatus(openM, closeM, now, display !== null),
+    ank: ank ?? null,
+    status,
     source: 'custom',
     // Internal only - stripped before the API responds.
     _sort: closeM,
@@ -93,15 +104,15 @@ function normalizeCustom(market, result, now) {
 /**
  * @param {Array} providerMarkets  normalized-by-provider markets
  * @param {Array} customMarkets    Mongo Market docs
- * @param {Map}   resultByMarket   marketId -> latest Result doc
+ * @param {Map}   halvesByMarket   marketId -> { open, close } Result docs
  * @param {number} now             minutes since midnight in the market
  *                                 timezone; defaults to the real clock.
  *                                 Injectable so the schedule can be tested.
  */
-export function mergeMarkets(providerMarkets, customMarkets, resultByMarket, now = nowMinutes()) {
+export function mergeMarkets(providerMarkets, customMarkets, halvesByMarket, now = nowMinutes()) {
   const provider = (providerMarkets ?? []).map((r) => normalizeProvider(r, now));
   const custom = (customMarkets ?? []).map((m) =>
-    normalizeCustom(m, resultByMarket?.get(String(m._id)), now)
+    normalizeCustom(m, halvesByMarket?.get(String(m._id)), now)
   );
 
   const all = [...provider, ...custom];

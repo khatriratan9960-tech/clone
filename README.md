@@ -143,6 +143,41 @@ puts it back to `257-7`).
 The form shows which halves are already declared for the selected date and
 jumps to the other half after you save.
 
+### Results publish ON TIME, not when you declare them
+
+You can declare a result whenever you like - hours early, the night before,
+whatever. The **public site is gated by the market's clock**, never by when
+you pressed save. A result declared at 09:00 for a market that opens at 09:15
+stays invisible until 09:15.
+
+For a market with `openTime` 09:15 and `closeTime` 21:15, declared at 09:00:
+
+| Time | What the public site shows |
+|---|---|
+| 09:00 - 09:14 | nothing - `Loading...` (even though both halves are stored) |
+| 09:15 - 21:14 | the open half only, e.g. `257-7` - the close panna is still hidden |
+| 21:15 onwards | the full result, e.g. `257-72-369` |
+
+This is enforced in `server/services/customReveal.js`, which every public read
+of a custom market goes through (both the live board and the merged market
+list). Declaring early is safe and useful - the admin panel always shows the
+full truth - it simply cannot leak to the public site.
+
+Two things it fixes at the same time:
+
+- **Early declarations no longer leak.** Previously the stored `display` string
+  was published as-is, so a result saved before its window appeared instantly
+  (and even reported `status: 'closed'`).
+- **Both halves now survive.** A market has two rows per draw (`open` +
+  `close`) and the old lookups kept only one, so whichever sorted last won.
+  Halves are now collected per market before the display is built.
+
+Provider markets are untouched - their results come from the upstream API and
+are gated by `liveBoard.js` on the same clock.
+
+Run `node verify-timing.mjs` to see the whole schedule asserted (15 checks),
+including midnight-wrapping markets such as 22:00 -> 00:30.
+
 ### One row per half
 
 `Result` is now one document per `(market, date, session)` where `session` is
