@@ -12,6 +12,9 @@ export const config = {
   port: Number(process.env.PORT || 4000),
   mongoUrl: process.env.MONGO_URL || 'mongodb://127.0.0.1:27017',
   dbName: process.env.DB_NAME || 'dpboss',
+  // Per-instance connection pool cap. Serverless instances each hold their
+  // own pool, so keep it small (Vercel + Atlas free tier friendly).
+  mongoMaxPool: Number(process.env.MONGO_MAX_POOL || 10),
 
   // In production a real JWT secret is REQUIRED. In dev we generate a
   // random one per boot so tokens never survive a restart.

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const API_DIR = join(__dirname, '..', '..', 'api');
+const API_DIR = join(__dirname, '..', '..', 'php-api');
 
 /** Read the seeded fixtures so mock mode has real-looking markets. */
 function loadFixtures() {

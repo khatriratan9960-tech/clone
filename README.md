@@ -1,8 +1,9 @@
 # DPBoss Clone — React + PHP JSON API
 
-A React (Vite) rebuild of **dpboss.tax**, backed by a PHP JSON API that proxies
-the upstream result feed. The styling is the original site's stylesheet,
-extracted verbatim, so the rendering matches pixel-for-pixel.
+A React (Vite) rebuild of **dpboss.tax**, backed by an Express JSON API that
+proxies the upstream result feed (the original PHP implementation is kept in
+`php-api/`). The styling is the original site's stylesheet, extracted verbatim,
+so the rendering matches pixel-for-pixel.
 
 ## Key finding about the original site
 
@@ -15,11 +16,12 @@ the original never had.
 ## Architecture
 
 ```
-Browser (React)  ──fetch('/api/*.php')──>  PHP JSON API  ──>  Upstream provider
-   localhost:5173  <──JSON──────────────    localhost:8000      mock | paid
+Browser (React)  ──fetch('/api/*.php')──>  Express JSON API  ──>  Upstream provider
+   localhost:5173  <──JSON──────────────    localhost:4000        mock | paid
+                                          + MongoDB (Atlas)
 ```
 
-Why the PHP layer exists:
+Why the API layer exists:
 
 - **Solves CORS permanently** — the browser only makes same-origin requests, so
   the upstream vendor does not need to send `Access-Control-Allow-Origin`.
@@ -27,7 +29,9 @@ Why the PHP layer exists:
 - **Enables caching + failover** — you can serve last-known-good data if the
   upstream API is down.
 
-Vite proxies `/api` → `http://localhost:8000` in dev (see `vite.config.js`).
+Vite proxies `/api` → `http://localhost:4000` in dev (see `vite.config.js`).
+The original PHP implementation of the same contract lives in `php-api/`;
+only the Node API is deployed to Vercel (`api/index.js`).
 
 ## Running it
 
@@ -159,6 +163,9 @@ typo is fixed by saving the correction.
 
 ```
 api/
+  index.js              Vercel serverless entry: restores the original /api/*
+                        path from the ?__p= rewrite param, hands off to app
+php-api/
   _bootstrap.php        response helpers, ank derivation, schema normalization
   config.php            API credentials (leave blank for mock)
   provider_paid.php     upstream adapter — fill in once you have credentials
@@ -172,6 +179,8 @@ api/
   live-result.php       polled every 15s; rebuilt from the clock each poll
   starline.php          15-minute interval rows
 server/
+  app.js                the Express app shared by local dev and Vercel
+  index.js              local dev starter (listen on :4000)
   services/marketClock.js  the schedule: parse times, and decide
                         upcoming / live / closed for any market. Shared by
                         mergeMarkets and liveBoard.
@@ -188,12 +197,14 @@ src/
 public/img/             dpboss-banner.png, dpboss-laxmi.jpg (extracted from the original)
 public/                  favicon.ico + apple-touch-icon-57/60/72/76/114/120/180.png
 verify.mjs              headless render assertions
+verify-vercel.mjs       simulates Vercel's /api/* -> function rewrite
 mock-server.mjs         Node stand-in for the PHP API
+vercel.json             Vercel routing: /api/* -> function, SPA fallback
 ```
 
-Market data lives in `data/mock.php`; the non-market page content lives in
-`data/sections.json`. Both servers read those two files, so the PHP API and the
-Node fallback always return identical payloads.
+Market data lives in `php-api/data/mock.php`; the non-market page content
+lives in `php-api/data/sections.json`. Both servers read those two files, so
+the PHP API and the Node server always return identical payloads.
 
 ### Important: Final Ank is NOT derived from the jodi
 
@@ -223,22 +234,94 @@ All providers are normalized to one contract, so components never change:
 A market that has not drawn yet comes back with `result: null` and
 `isPending: true`; the UI renders the original's `Loading...` placeholder.
 
+## Deploying to Vercel
+
+### The flow: from DP data to the public website
+
+```text
+DPBOSS (paid API)  or  bundled fixtures (php-api/data/)
+        │
+        ▼
+Express API  /api/*.php          ◀──── Admin panel /admin (JWT)
+(Vercel function: api/index.js)        declares results, manages markets
+        │  merges
+        ▼
+MongoDB Atlas                       React SPA (Vercel CDN, dist/)
+custom markets, declared results,        │ same-origin JSON (no CORS)
+seeded admins                            ▼
+                                 https://your-domain/
+```
+
+1. **Data first (DP → database).** In mock mode the fixtures in
+   `php-api/data/` feed the API; once you buy the paid DPBOSS API, set
+   `PROVIDER_BASE_URL` / `PROVIDER_API_KEY` and the same code path serves live
+   results. Declared results and custom markets live in MongoDB - that is the
+   site's persistent state, so the database must exist before anything else.
+2. **API next.** One Vercel Function (`api/index.js`) runs the Express app;
+   `vercel.json` rewrites every `/api/*` URL to it (original path preserved
+   via `?__p=`).
+3. **Website last.** Vite builds the SPA to `dist/`, served from Vercel's CDN;
+   every non-file URL falls back to `index.html` (chart pages, `/admin`).
+
+### First-time deploy order
+
+| # | Step | Where |
+|---|---|---|
+| 1 | Create a free M0 cluster, a DB user, network access (`0.0.0.0/0`), copy the connection string | cloud.mongodb.com |
+| 2 | Push the repo to GitHub | done (`origin`) |
+| 3 | Import the repo into Vercel - framework auto-detects **Vite**, `api/index.js` is picked up as a function | vercel.com/new |
+| 4 | Set the env vars below **before** deploying | Project → Settings → Environment Variables |
+| 5 | Deploy, then verify in order: `/api/health` shows `"db":"connected"`, `/api/home.php` returns `ok:true`, `/` renders the live board, `/admin` accepts the login | deployment URL |
+| 6 | Log in at `/admin` and **change the seeded password immediately** | `/admin` |
+| 7 | Attach your custom domain | Settings → Domains |
+
+| Env var | Value |
+|---|---|
+| `MONGO_URL` | Atlas connection string (`mongodb+srv://...`) |
+| `DB_NAME` | `dpboss` |
+| `JWT_SECRET` | `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD` | bootstrap admin (only used while the users collection is empty) |
+| `PROVIDER_BASE_URL` / `PROVIDER_API_KEY` | leave empty until you buy the paid API |
+| `MONGO_MAX_POOL` | optional, defaults to `10` |
+
+`NODE_ENV=production` is set by Vercel, so the API refuses to boot without
+`JWT_SECRET` on purpose.
+
+### What runs where
+
+| Piece | Runtime |
+|---|---|
+| React SPA (`dist/`) | Vercel static CDN; SPA rewrite serves `index.html` for every non-file URL |
+| Express API | one serverless function `api/index.js` (path restored from `?__p=`) |
+| Legacy PHP API | **not deployed** - `php-api/` kept for reference / standalone hosting |
+| Fixture data | bundled with the function (`functions.includeFiles` in `vercel.json`) |
+| MongoDB | Atlas - `localhost` is unreachable from Vercel |
+
+### Serverless behaviour
+
+- DB connect + seed admin run lazily on the first request of each cold start
+  (`ensureReady()` in `server/app.js`), never at import time.
+- There are no background timers anywhere - every response fetches what it
+  needs per request, so warm functions can never serve frozen data.
+- Local dev is unchanged: `npm run api:dev` (:4000) + `npm run dev` (:5173,
+  which proxies `/api`).
+
 ## Switching to the paid DPBOSS API
 
 1. Get credentials + docs from DPBOSS (`support@dpboss.net`).
-2. Fill in `api/config.php`:
-   ```php
-   define('DPBOSS_API_BASE', 'https://vendor-host/v1');
-   define('DPBOSS_API_KEY',  'your-key');
-   ```
-3. Map the vendor's field names in `api/provider_paid.php`.
-4. Set the env var when starting the server:
+2. Set the env vars (local `.env`, or Vercel → Settings → Environment
+   Variables):
    ```bash
-   DPBOSS_PROVIDER=paid npm run php
+   PROVIDER_BASE_URL=https://vendor-host/v1
+   PROVIDER_API_KEY=your-key
    ```
+3. Map the vendor's field names in `server/services/provider.js`
+   (`fetchProviderMarkets()` and `fetchProviderLive()`).
 
 **No React file changes are needed.** Normalization happens in
-`api/_bootstrap.php:normalizeMarket()`.
+`server/services/` (`provider.js` + `mergeMarkets.js`). The legacy PHP
+adapter (`php-api/provider_paid.php` + `php-api/config.php`) is only used
+when hosting the PHP API standalone.
 
 ### Confirm these with the vendor before paying
 

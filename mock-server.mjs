@@ -2,11 +2,12 @@
  * Zero-dependency Node stand-in for the PHP API.
  *
  * Use this ONLY when PHP is not installed locally. It serves the exact
- * same JSON contract as api/*.php so the React app behaves identically.
+ * same JSON contract as php-api/*.php so the React app behaves identically.
  *
  *   node mock-server.mjs          -> listens on :8000
  *
- * In production run the real PHP endpoints instead.
+ * In production the Express API (npm run api) serves these routes; the PHP
+ * files under php-api/ are kept for reference / standalone PHP hosting.
  */
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
@@ -20,7 +21,7 @@ import { buildLiveBoard } from './server/services/liveBoard.js';
 import { nowMinutes, toMinutes, windowStatus, publicStatus } from './server/services/marketClock.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const php = readFileSync(join(__dirname, 'api/data/mock.php'), 'utf8');
+const php = readFileSync(join(__dirname, 'php-api/data/mock.php'), 'utf8');
 
 // Parse the PHP fixture arrays without executing PHP.
 function parseRows(fnName) {
@@ -53,7 +54,7 @@ const starline = parseRows('mockStarline');
 
 // Content sections live in a shared JSON file - identical payload to PHP.
 const sections = JSON.parse(
-  readFileSync(join(__dirname, 'api/data/sections.json'), 'utf8')
+  readFileSync(join(__dirname, 'php-api/data/sections.json'), 'utf8')
 );
 const {
   goldenAnk,

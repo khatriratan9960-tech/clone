@@ -6,7 +6,7 @@ _api.err
 .env
 
 # Never commit real API credentials
-api/config.local.php
+php-api/config.local.php
 
 # Admin auth storage
 server/config.local.js

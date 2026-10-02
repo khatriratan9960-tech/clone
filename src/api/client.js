@@ -5,8 +5,8 @@
  * so the browser only ever makes same-origin requests. That means
  * CORS is a non-issue and the paid API key never reaches the client.
  *
- * SWAPPING TO THE PAID API: nothing below changes. Set the server
- * env var DPBOSS_PROVIDER=paid and fill in api/config.php.
+ * SWAPPING TO THE PAID API: nothing below changes. Set PROVIDER_BASE_URL
+ * and PROVIDER_API_KEY on the server (see .env.example).
  */
 
 const BASE = '/api';
