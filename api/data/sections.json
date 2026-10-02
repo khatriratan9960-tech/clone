@@ -1,0 +1,943 @@
+{
+  "goldenAnk": "0-5-2-7",
+  "finalAnk": [
+    {
+      "market": "KALYAN MORNING",
+      "ank": 4
+    },
+    {
+      "market": "MILAN MORNING",
+      "ank": 6
+    },
+    {
+      "market": "SRIDEVI",
+      "ank": 2
+    },
+    {
+      "market": "MAIN BAZAR MORNING",
+      "ank": 0
+    },
+    {
+      "market": "MADHURI",
+      "ank": 0
+    },
+    {
+      "market": "SRIDEVI MORNING",
+      "ank": 0
+    },
+    {
+      "market": "KARNATAKA DAY",
+      "ank": 2
+    },
+    {
+      "market": "TIME BAZAR",
+      "ank": 4
+    },
+    {
+      "market": "MILAN DAY",
+      "ank": 4
+    },
+    {
+      "market": "MUMBAI MORNING",
+      "ank": 8
+    },
+    {
+      "market": "NEW TIME BAZAR",
+      "ank": 0
+    },
+    {
+      "market": "KALYAN",
+      "ank": 8
+    },
+    {
+      "market": "SRIDEVI NIGHT",
+      "ank": 2
+    },
+    {
+      "market": "MADHURI NIGHT",
+      "ank": 0
+    },
+    {
+      "market": "MILAN NIGHT",
+      "ank": 6
+    },
+    {
+      "market": "RAJDHANI NIGHT",
+      "ank": 4
+    },
+    {
+      "market": "MAIN BAZAR",
+      "ank": 8
+    },
+    {
+      "market": "BOMBAY DAY",
+      "ank": 6
+    },
+    {
+      "market": "KALYAN NIGHT",
+      "ank": 0
+    },
+    {
+      "market": "OLD MAIN MUMBAI",
+      "ank": 4
+    },
+    {
+      "market": "MADHUR DAY",
+      "ank": 0
+    },
+    {
+      "market": "MADHUR NIGHT",
+      "ank": 6
+    },
+    {
+      "market": "SUNDAY BAZAR",
+      "ank": 2
+    },
+    {
+      "market": "CITY BAZAR DAY",
+      "ank": 0
+    },
+    {
+      "market": "CITY BAZAR NIGHT",
+      "ank": 0
+    }
+  ],
+  "starlineTables": {
+    "mainStarline": [
+      {
+        "time": "09:05 AM",
+        "result": "370-0",
+        "time2": "03:05 PM",
+        "result2": "789-4"
+      },
+      {
+        "time": "10:05 AM",
+        "result": "268-6",
+        "time2": "04:05 PM",
+        "result2": "117-9"
+      },
+      {
+        "time": "11:05 AM",
+        "result": "378-8",
+        "time2": "05:05 PM",
+        "result2": "167-4"
+      },
+      {
+        "time": "12:05 PM",
+        "result": "600-6",
+        "time2": "06:05 PM",
+        "result2": "460-0"
+      },
+      {
+        "time": "01:05 PM",
+        "result": "350-8",
+        "time2": "07:05 PM",
+        "result2": "149-4"
+      },
+      {
+        "time": "02:05 PM",
+        "result": "455-4",
+        "time2": "08:05 PM",
+        "result2": ""
+      },
+      {
+        "time": "09:45 AM",
+        "result": "127-0",
+        "time2": "03:45 PM",
+        "result2": "237-2"
+      },
+      {
+        "time": "10:45 AM",
+        "result": "340-7",
+        "time2": "04:45 PM",
+        "result2": "179-7"
+      },
+      {
+        "time": "11:45 AM",
+        "result": "166-3",
+        "time2": "05:45 PM",
+        "result2": "356-4"
+      },
+      {
+        "time": "12:45 PM",
+        "result": "378-8",
+        "time2": "06:45 PM",
+        "result2": "680-4"
+      },
+      {
+        "time": "01:45 PM",
+        "result": "135-9",
+        "time2": "07:45 PM",
+        "result2": ""
+      },
+      {
+        "time": "02:45 PM",
+        "result": "189-8",
+        "time2": "08:45 PM",
+        "result2": ""
+      },
+      {
+        "time": "11:00 AM",
+        "result": "237-2",
+        "time2": "11:15 AM",
+        "result2": "780-5"
+      },
+      {
+        "time": "11:30 AM",
+        "result": "268-6",
+        "time2": "11:45 AM",
+        "result2": "145-0"
+      },
+      {
+        "time": "12:00 PM",
+        "result": "360-9",
+        "time2": "12:15 PM",
+        "result2": "267-5"
+      },
+      {
+        "time": "12:30 PM",
+        "result": "238-3",
+        "time2": "12:45 PM",
+        "result2": "578-0"
+      },
+      {
+        "time": "01:00 PM",
+        "result": "459-8",
+        "time2": "01:15 PM",
+        "result2": "129-2"
+      },
+      {
+        "time": "01:30 PM",
+        "result": "156-2",
+        "time2": "01:45 PM",
+        "result2": "250-7"
+      },
+      {
+        "time": "02:00 PM",
+        "result": "169-6",
+        "time2": "02:15 PM",
+        "result2": "670-3"
+      },
+      {
+        "time": "02:30 PM",
+        "result": "469-9",
+        "time2": "02:45 PM",
+        "result2": "256-3"
+      },
+      {
+        "time": "03:00 PM",
+        "result": "278-7",
+        "time2": "03:15 PM",
+        "result2": "357-5"
+      },
+      {
+        "time": "03:30 PM",
+        "result": "259-6",
+        "time2": "03:45 PM",
+        "result2": "230-5"
+      },
+      {
+        "time": "04:00 PM",
+        "result": "600-6",
+        "time2": "04:15 PM",
+        "result2": "467-7"
+      },
+      {
+        "time": "04:30 PM",
+        "result": "158-4",
+        "time2": "04:45 PM",
+        "result2": "389-0"
+      }
+    ],
+    "mumbaiRajshree": [
+      {
+        "time": "09:45 AM",
+        "result": "127-0",
+        "time2": "03:45 PM",
+        "result2": "237-2"
+      },
+      {
+        "time": "10:45 AM",
+        "result": "340-7",
+        "time2": "04:45 PM",
+        "result2": "179-7"
+      },
+      {
+        "time": "11:45 AM",
+        "result": "166-3",
+        "time2": "05:45 PM",
+        "result2": "356-4"
+      },
+      {
+        "time": "12:45 PM",
+        "result": "378-8",
+        "time2": "06:45 PM",
+        "result2": "680-4"
+      },
+      {
+        "time": "01:45 PM",
+        "result": "135-9",
+        "time2": "07:45 PM",
+        "result2": ""
+      },
+      {
+        "time": "02:45 PM",
+        "result": "189-8",
+        "time2": "08:45 PM",
+        "result2": ""
+      },
+      {
+        "time": "11:00 AM",
+        "result": "237-2",
+        "time2": "11:15 AM",
+        "result2": "780-5"
+      },
+      {
+        "time": "11:30 AM",
+        "result": "268-6",
+        "time2": "11:45 AM",
+        "result2": "145-0"
+      },
+      {
+        "time": "12:00 PM",
+        "result": "360-9",
+        "time2": "12:15 PM",
+        "result2": "267-5"
+      },
+      {
+        "time": "12:30 PM",
+        "result": "238-3",
+        "time2": "12:45 PM",
+        "result2": "578-0"
+      },
+      {
+        "time": "01:00 PM",
+        "result": "459-8",
+        "time2": "01:15 PM",
+        "result2": "129-2"
+      },
+      {
+        "time": "01:30 PM",
+        "result": "156-2",
+        "time2": "01:45 PM",
+        "result2": "250-7"
+      },
+      {
+        "time": "02:00 PM",
+        "result": "169-6",
+        "time2": "02:15 PM",
+        "result2": "670-3"
+      },
+      {
+        "time": "02:30 PM",
+        "result": "469-9",
+        "time2": "02:45 PM",
+        "result2": "256-3"
+      },
+      {
+        "time": "03:00 PM",
+        "result": "278-7",
+        "time2": "03:15 PM",
+        "result2": "357-5"
+      },
+      {
+        "time": "03:30 PM",
+        "result": "259-6",
+        "time2": "03:45 PM",
+        "result2": "230-5"
+      },
+      {
+        "time": "04:00 PM",
+        "result": "600-6",
+        "time2": "04:15 PM",
+        "result2": "467-7"
+      },
+      {
+        "time": "04:30 PM",
+        "result": "158-4",
+        "time2": "04:45 PM",
+        "result2": "389-0"
+      },
+      {
+        "time": "05:00 PM",
+        "result": "236-1",
+        "time2": "05:15 PM",
+        "result2": "455-4"
+      },
+      {
+        "time": "05:30 PM",
+        "result": "790-6",
+        "time2": "05:45 PM",
+        "result2": "127-0"
+      },
+      {
+        "time": "06:00 PM",
+        "result": "568-9",
+        "time2": "06:15 PM",
+        "result2": "245-1"
+      },
+      {
+        "time": "06:30 PM",
+        "result": "337-3",
+        "time2": "06:45 PM",
+        "result2": "479-0"
+      },
+      {
+        "time": "07:00 PM",
+        "result": "239-4",
+        "time2": "07:15 PM",
+        "result2": "460-0"
+      },
+      {
+        "time": "07:30 PM",
+        "result": "168-5",
+        "time2": "07:45 PM",
+        "result2": "490-3"
+      }
+    ],
+    "bombay36": [
+      {
+        "time": "11:00 AM",
+        "result": "237-2",
+        "time2": "11:15 AM",
+        "result2": "780-5"
+      },
+      {
+        "time": "11:30 AM",
+        "result": "268-6",
+        "time2": "11:45 AM",
+        "result2": "145-0"
+      },
+      {
+        "time": "12:00 PM",
+        "result": "360-9",
+        "time2": "12:15 PM",
+        "result2": "267-5"
+      },
+      {
+        "time": "12:30 PM",
+        "result": "238-3",
+        "time2": "12:45 PM",
+        "result2": "578-0"
+      },
+      {
+        "time": "01:00 PM",
+        "result": "459-8",
+        "time2": "01:15 PM",
+        "result2": "129-2"
+      },
+      {
+        "time": "01:30 PM",
+        "result": "156-2",
+        "time2": "01:45 PM",
+        "result2": "250-7"
+      },
+      {
+        "time": "02:00 PM",
+        "result": "169-6",
+        "time2": "02:15 PM",
+        "result2": "670-3"
+      },
+      {
+        "time": "02:30 PM",
+        "result": "469-9",
+        "time2": "02:45 PM",
+        "result2": "256-3"
+      },
+      {
+        "time": "03:00 PM",
+        "result": "278-7",
+        "time2": "03:15 PM",
+        "result2": "357-5"
+      },
+      {
+        "time": "03:30 PM",
+        "result": "259-6",
+        "time2": "03:45 PM",
+        "result2": "230-5"
+      },
+      {
+        "time": "04:00 PM",
+        "result": "600-6",
+        "time2": "04:15 PM",
+        "result2": "467-7"
+      },
+      {
+        "time": "04:30 PM",
+        "result": "158-4",
+        "time2": "04:45 PM",
+        "result2": "389-0"
+      },
+      {
+        "time": "05:00 PM",
+        "result": "236-1",
+        "time2": "05:15 PM",
+        "result2": "455-4"
+      },
+      {
+        "time": "05:30 PM",
+        "result": "790-6",
+        "time2": "05:45 PM",
+        "result2": "127-0"
+      },
+      {
+        "time": "06:00 PM",
+        "result": "568-9",
+        "time2": "06:15 PM",
+        "result2": "245-1"
+      },
+      {
+        "time": "06:30 PM",
+        "result": "337-3",
+        "time2": "06:45 PM",
+        "result2": "479-0"
+      },
+      {
+        "time": "07:00 PM",
+        "result": "239-4",
+        "time2": "07:15 PM",
+        "result2": "460-0"
+      },
+      {
+        "time": "07:30 PM",
+        "result": "168-5",
+        "time2": "07:45 PM",
+        "result2": "490-3"
+      }
+    ]
+  },
+  "weeklyCharts": [
+    {
+      "lines": [
+        "1=>560-579-128-119",
+        "2=>129-110-679-138",
+        "3=>139-689-157-148",
+        "4=>130-680-112-158",
+        "5=>249-140-258-113",
+        "6=>268-123-150-330",
+        "7=>890-133-449-179",
+        "8=>288-260-134-567",
+        "9=>135-559-360-379",
+        "0=>127-568-550-280"
+      ],
+      "title": "DpBoss Net Weekly Patti Or Penal Chart From 28-09-2026 To 04-10-2026 For Kalyan, Milan, Kalyan Night, Rajdhani, Time, Main Bazar, Mumbai Royal Night, Kalyan Morning"
+    },
+    {
+      "lines": [
+        "Mon. 1-6-4-9",
+        "Tue. 2-7-3-8",
+        "Wed. 1-6-4-9",
+        "Thu. 2-7-5-0",
+        "Fri. 3-8-4-9",
+        "Sat. 1-6-5-0",
+        "Sun. 2-7-3-8"
+      ],
+      "title": "DpBoss Net Weekly Line Open  Or Close From 28-09-2026 To 04-10-2026 For Kalyan, Milan, Kalyan Night, Rajdhani, Time, Main Bazar, Mumbai Royal Night, Kalyan Morning"
+    },
+    {
+      "lines": [
+        "32 37 82 87",
+        "41 46 91 96",
+        "02 07 52 57",
+        "13 18 63 68",
+        "93 93 89 98",
+        "24 29 74 79"
+      ],
+      "title": "DpBoss Net Weekly Jodi Chart From 28-09-2026 To 04-10-2026 For Kalyan Milan Kalyan Night, Rajdhani Time, Main Bazar, Mumbai Royal Night Market, Kalyan Morning"
+    }
+  ],
+  "freeGame": {
+    "date": "01/10/2026",
+    "markets": [
+      {
+        "market": "MILAN MORNING",
+        "values": [
+          "1-6-3-8",
+          "290-240-238-288-189",
+          "13-18-63-68-31-36-81-86"
+        ]
+      },
+      {
+        "market": "KALYAN MORNING",
+        "values": [
+          "1-8-0-5",
+          "588-128-378-190-140",
+          "12-84-03-54-08-47"
+        ]
+      },
+      {
+        "market": "TIME BAZAR",
+        "values": [
+          "3-8-4-9",
+          "120-170-558-680-360",
+          "34-39-84-89-43-48-93-98"
+        ]
+      },
+      {
+        "market": "MILAN DAY",
+        "values": [
+          "1-6-4-9",
+          "236-367-455-559-126",
+          "14-19-64-69-41-46-91-96"
+        ]
+      },
+      {
+        "market": "KALYAN",
+        "values": [
+          "0-5-3-8",
+          "226-370-256-260-189",
+          "03-08-53-58-30-35-80-85"
+        ]
+      },
+      {
+        "market": "MILAN NIGHT",
+        "values": [
+          "*-*-*-*",
+          "***-***-***-***-***",
+          "**-**-**-**-**-**-**-**"
+        ]
+      },
+      {
+        "market": "KALYAN NIGHT",
+        "values": [
+          "*-*-*-*",
+          "***-***-***-***-***",
+          "**-**-**-**-**-**-**-**"
+        ]
+      },
+      {
+        "market": "RAJDHANI NIGHT",
+        "values": [
+          "*-*-*-*",
+          "***-***-***-***-***",
+          "**-**-**-**-**-**-**-**"
+        ]
+      },
+      {
+        "market": "MAIN BAZAR",
+        "values": [
+          "*-*-*-*",
+          "***-***-***-***-***",
+          "**-**-**-**-**-**-**-**"
+        ]
+      },
+      {
+        "market": "RATAN KHATRI",
+        "values": [
+          "*-*-*-*",
+          "***-***-***-***-***",
+          "**-**-**-**-**-**-**-**"
+        ]
+      },
+      {
+        "market": "PUNA BAZAR",
+        "values": [
+          "3---5---6",
+          "148-490-357-780-156-367",
+          "12-14-18-52-54-58-62-64-68"
+        ]
+      },
+      {
+        "market": "SRIDEVI NIGHT",
+        "values": [
+          "2-3-4-9",
+          "679-139-239-234",
+          "25-20-35-30-40-45-90-95"
+        ]
+      },
+      {
+        "market": "MAIN BAZAR MORNING",
+        "values": [
+          "9-3-5-0-",
+          "450-670-113-127",
+          "93-98-39-34-52-57-02-07",
+          "3-8-4-9-2-7"
+        ]
+      },
+      {
+        "market": "PADMAVATI",
+        "values": [
+          "1-4-7-9",
+          "137-560-455-130-124-566-126-559",
+          "12-11-44-42-76-73-92-96",
+          "2-3-4-6"
+        ]
+      },
+      {
+        "market": "KARNATAKA DAY",
+        "values": [
+          "4-5-8",
+          "130-235-456-890-350-478",
+          "49-47-57-59-80-89",
+          "0-7-9"
+        ]
+      },
+      {
+        "market": "SRIDEVI",
+        "values": [
+          "4-5-9-0",
+          "112-889-117-488",
+          "41-46-52-57-93-98-00-05"
+        ]
+      },
+      {
+        "market": "PRABHAT",
+        "values": [
+          "3-4-8-9",
+          "689-139-149-455-189-134-180-450",
+          "33-32-43-48-89-84-90-95"
+        ]
+      },
+      {
+        "market": "NEW TIME BAZAR",
+        "values": [
+          "8-3-0-5-",
+          "236-178-180-680-347",
+          "478-346-235-159-780",
+          "87-82-37-32-09-04-59-54"
+        ]
+      },
+      {
+        "market": "SRIDEVI MORNING",
+        "values": [
+          "1-6-3-8",
+          "236-367-139-189-558",
+          "13-18-63-68-31-36-81-86"
+        ]
+      },
+      {
+        "market": "MAIN BAZAR DAY",
+        "values": [
+          "4-9-5-0",
+          "149-199-289-140-190",
+          "45-40-95-90-54-59-04-09"
+        ]
+      }
+    ]
+  },
+  "dayTables": [
+    {
+      "rows": [
+        {
+          "day": "सोम",
+          "values": [
+            "3",
+            "689",
+            "5",
+            "366",
+            "7",
+            "223",
+            "8",
+            "666"
+          ]
+        },
+        {
+          "day": "मंगल",
+          "values": [
+            "2",
+            "156",
+            "7",
+            "467",
+            "8",
+            "477",
+            "9",
+            "333"
+          ]
+        },
+        {
+          "day": "बुध",
+          "values": [
+            "3",
+            "779",
+            "7",
+            "359",
+            "8",
+            "134",
+            "9",
+            "478"
+          ]
+        },
+        {
+          "day": "गुरु",
+          "values": [
+            "3",
+            "779",
+            "5",
+            "168",
+            "7",
+            "133",
+            "9",
+            "388"
+          ]
+        },
+        {
+          "day": "शुक्र",
+          "values": [
+            "5",
+            "122",
+            "6",
+            "277",
+            "7",
+            "269",
+            "8",
+            "189"
+          ]
+        },
+        {
+          "day": "शनि",
+          "values": [
+            "2",
+            "138",
+            "5",
+            "122",
+            "7",
+            "467",
+            "9",
+            "234"
+          ]
+        }
+      ],
+      "title": "KALYAN / कल्याण"
+    },
+    {
+      "rows": [
+        {
+          "day": "सोम",
+          "values": [
+            "3",
+            "445",
+            "6",
+            "169",
+            "8",
+            "990",
+            "9",
+            "360"
+          ]
+        },
+        {
+          "day": "मंगल",
+          "values": [
+            "3",
+            "148",
+            "4",
+            "158",
+            "5",
+            "690",
+            "6",
+            "556"
+          ]
+        },
+        {
+          "day": "बुध",
+          "values": [
+            "0",
+            "127",
+            "5",
+            "339",
+            "8",
+            "189",
+            "9",
+            "568"
+          ]
+        },
+        {
+          "day": "गुरु",
+          "values": [
+            "2",
+            "246",
+            "5",
+            "168",
+            "6",
+            "222",
+            "7",
+            "557"
+          ]
+        },
+        {
+          "day": "शुक्र",
+          "values": [
+            "1",
+            "560",
+            "6",
+            "259",
+            "8",
+            "260",
+            "9",
+            "568"
+          ]
+        }
+      ],
+      "title": "KALYAN NIGHT / MAIN BAZAR"
+    }
+  ],
+  "passListDate": "01-10-2026",
+  "passList": [
+    "KALYAN MORNING => Close Ank 8 Pass.",
+    "SRIDEVI MORNING => Open Ank 8 Pass, Open Patti 189 Pass.",
+    "KALYAN => Close Ank 8 Pass."
+  ],
+  "linkZones": [
+    {
+      "links": [
+        {
+          "text": "Dpboss Guessing Forum",
+          "href": "https://dpboss.direct/matka-guessing-forum"
+        },
+        {
+          "text": "Dpboss Expert Forum",
+          "href": "https://dpboss.direct/expert-forum"
+        },
+        {
+          "text": "Dpboss Kalyan Trick Forum",
+          "href": "https://dpboss.direct/kalyan-trick-forum"
+        },
+        {
+          "text": "All market free fix game",
+          "href": "https://dpboss.tax/matka-free-open.php"
+        },
+        {
+          "text": "Ratan Khatri Fix Panel Chart",
+          "href": "https://dpboss.tax/khatris-favourite-panna-chart.php"
+        },
+        {
+          "text": "Matka Final Number Trick Chart",
+          "href": "https://dpboss.tax/matka-final-number-chart.php"
+        },
+        {
+          "text": "EverGreen Trick Zone And Matka Tricks By DpBoss",
+          "href": "https://dpboss.tax/ever-green-tricks/satta-matka-tricks-zone.php"
+        }
+      ],
+      "title": "Dpboss Special Game Zone"
+    },
+    {
+      "links": [
+        {
+          "text": "Matka Jodi Count Chart",
+          "href": "https://dpboss.tax/matka-jodi-count-chart.php"
+        },
+        {
+          "text": "Dhanvarsha Daily Fix Open To Close",
+          "href": "https://dpboss.tax/fix-open-to-close-by-date.php"
+        },
+        {
+          "text": "Matka Jodi Family Chart",
+          "href": "https://dpboss.tax/jodi-chart-family-matka.php"
+        },
+        {
+          "text": "Penal Count Chart",
+          "href": "https://dpboss.tax/penal-count-chart.php"
+        },
+        {
+          "text": "Penal Total Chart",
+          "href": "https://dpboss.tax/penal-total-chart.php"
+        },
+        {
+          "text": "All 220 Card List",
+          "href": "https://dpboss.tax/All-22-Card-Panna-Penal-Patti-Chart.php"
+        }
+      ],
+      "title": "Matka Jodi List"
+    }
+  ]
+}

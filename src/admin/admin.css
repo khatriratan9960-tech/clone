@@ -1,0 +1,382 @@
+/* Admin panel styles - deliberately plain and high-contrast,
+   separate from the public site's loud dpboss styling. */
+
+:root {
+  --adm-bg: #f4f6f8;
+  --adm-card: #ffffff;
+  --adm-border: #d9e0e7;
+  --adm-text: #1a2733;
+  --adm-muted: #64748b;
+  --adm-primary: #0f62fe;
+  --adm-danger: #d93025;
+  --adm-ok: #0f9d58;
+}
+
+body.admin-mode {
+  background: var(--adm-bg);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-style: normal;
+  color: var(--adm-text);
+}
+
+.adm-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.adm-card {
+  background: var(--adm-card);
+  border: 1px solid var(--adm-border);
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.adm-card-narrow {
+  max-width: 420px;
+  margin: 60px auto;
+}
+
+.adm-title {
+  font-size: 22px;
+  margin: 0 0 4px;
+}
+
+.adm-sub {
+  color: var(--adm-muted);
+  font-size: 14px;
+  margin: 0 0 20px;
+}
+
+.adm-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.adm-input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 9px 11px;
+  font-size: 14px;
+  font-family: inherit;
+  border: 1px solid var(--adm-border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--adm-text);
+}
+
+.adm-input:focus {
+  outline: 2px solid var(--adm-primary);
+  outline-offset: -1px;
+  border-color: var(--adm-primary);
+}
+
+.adm-btn {
+  padding: 9px 16px;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 600;
+  border: 1px solid var(--adm-border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--adm-text);
+  cursor: pointer;
+}
+
+.adm-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.adm-btn-primary {
+  background: var(--adm-primary);
+  border-color: var(--adm-primary);
+  color: #fff;
+  width: 100%;
+}
+
+.adm-btn-sm {
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+.adm-btn-danger {
+  color: var(--adm-danger);
+  border-color: #f2c4c0;
+}
+
+.adm-error {
+  background: #fdecea;
+  border: 1px solid #f5c6c2;
+  color: var(--adm-danger);
+  padding: 9px 11px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.adm-ok {
+  background: #e6f4ea;
+  border: 1px solid #b7e0c4;
+  color: var(--adm-ok);
+  padding: 9px 11px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.adm-back {
+  display: block;
+  text-align: center;
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--adm-muted);
+}
+
+.adm-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.adm-topbar h1 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.adm-user {
+  font-size: 13px;
+  color: var(--adm-muted);
+}
+
+.adm-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.adm-stat {
+  background: var(--adm-card);
+  border: 1px solid var(--adm-border);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.adm-stat b {
+  display: block;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.adm-stat span {
+  font-size: 12px;
+  color: var(--adm-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.adm-section {
+  background: var(--adm-card);
+  border: 1px solid var(--adm-border);
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 20px;
+}
+
+.adm-section h2 {
+  font-size: 16px;
+  margin: 0 0 14px;
+}
+
+.adm-grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.adm-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.adm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.adm-table th,
+.adm-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--adm-border);
+}
+
+.adm-table th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--adm-muted);
+}
+
+.adm-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.adm-badge-on {
+  background: #e6f4ea;
+  color: var(--adm-ok);
+}
+
+.adm-badge-off {
+  background: #f1f3f5;
+  color: var(--adm-muted);
+}
+
+.adm-badge-custom {
+  background: #e8f0fe;
+  color: var(--adm-primary);
+}
+
+.adm-result {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.adm-empty {
+  color: var(--adm-muted);
+  font-size: 13px;
+  padding: 12px 0;
+}
+
+.adm-hint {
+  font-size: 12px;
+  color: var(--adm-muted);
+  margin: -6px 0 14px;
+}
+
+/* --- Analog clock time picker --- */
+
+.adm-clock-label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.adm-clock-row {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.adm-clock {
+  width: 150px;
+  height: 150px;
+  flex-shrink: 0;
+  touch-action: none; /* let us handle the drag, not scroll the page */
+  user-select: none;
+  cursor: grab;
+}
+
+.adm-clock:active {
+  cursor: grabbing;
+}
+
+.adm-clock-face {
+  fill: #fff;
+  stroke: var(--adm-border);
+  stroke-width: 2;
+}
+
+.adm-clock-tick {
+  stroke: #cbd5e1;
+  stroke-width: 1;
+}
+
+.adm-clock-tick-big {
+  stroke: #94a3b8;
+  stroke-width: 2;
+}
+
+.adm-clock-num {
+  font-size: 15px;
+  font-weight: 700;
+  fill: #334155;
+  text-anchor: middle;
+  font-family: system-ui, sans-serif;
+}
+
+.adm-clock-hand-hour {
+  stroke: #0f62fe;
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.adm-clock-hand-min {
+  stroke: #ea580c;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.adm-clock-grip {
+  fill: #0f62fe;
+  stroke: #fff;
+  stroke-width: 3;
+  cursor: grab;
+}
+
+.adm-clock-grip-min {
+  fill: #ea580c;
+}
+
+.adm-clock-pin {
+  fill: #334155;
+}
+
+.adm-clock-side {
+  flex: 1;
+  min-width: 0;
+}
+
+.adm-clock-readout {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--adm-text);
+}
+
+.adm-clock-24h {
+  font-size: 12px;
+  color: var(--adm-muted);
+  margin-bottom: 10px;
+}
+
+.adm-clock-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.adm-clock-native {
+  max-width: 160px;
+}
+
+@media (max-width: 640px) {
+  .adm-grid2 {
+    grid-template-columns: 1fr;
+  }
+}

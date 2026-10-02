@@ -1,0 +1,121 @@
+/**
+ * Merge provider markets with the operator's own markets into one list.
+ *
+ * The goal is that a custom market is INDISTINGUISHABLE from a provider one:
+ * same field names, same ordering, same result format. It is interleaved by
+ * draw time rather than appended, so it slots into the natural flow of the
+ * page instead of looking bolted on at the bottom.
+ */
+
+import { toMinutes, to12Hour, nowMinutes, publicStatus } from './marketClock.js';
+
+// Re-exported so existing callers keep working from this module.
+export { toMinutes, to12Hour };
+
+/** Last digit of a result tail, or null. */
+function ankOf(display) {
+  if (!display) return null;
+  const parts = String(display).split('-').filter(Boolean);
+  const tail = parts[parts.length - 1] ?? '';
+  return /^\d+$/.test(tail) ? Number(tail.slice(-1)) : null;
+}
+
+/** Shape a provider market to the same contract custom markets use. */
+function normalizeProvider(raw, now) {
+  const name = raw.market ?? raw.name ?? '';
+  const open = raw.open ?? null;
+  const close = raw.close ?? null;
+  const jodi = raw.jodi ?? null;
+
+  const hasAll = open != null && close != null && jodi != null && jodi !== '';
+  const hasPair = open != null && close != null && !hasAll;
+
+  let display = null;
+  if (hasAll) display = `${open}-${close}-${jodi}`;
+  else if (hasPair) display = `${open}-${close}`;
+  else if (jodi != null && jodi !== '') display = String(jodi);
+
+  const slug = raw.slug ?? String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+  return {
+    market: name,
+    slug,
+    open,
+    close,
+    jodi: hasAll ? jodi : null,
+    result: display,
+    openTime: raw.openTime ?? '',
+    closeTime: raw.closeTime ?? '',
+    ank: raw.ank ?? ankOf(display),
+    // Clock-driven, not result-driven: a market inside its draw window is
+    // "live" even before anything has been published for it.
+    status: publicStatus(
+      toMinutes(raw.openTime ?? raw.open_time),
+      toMinutes(raw.closeTime ?? raw.close_time),
+      now,
+      display !== null
+    ),
+    source: 'provider',
+    jodiUrl: `/jodi-chart-record/${slug}.php`,
+    panelUrl: `/panel-chart-record/${slug}.php`,
+    _sort: toMinutes(raw.closeTime ?? raw.close_time),
+  };
+}
+
+/** Shape one of the operator's markets + its declared result. */
+function normalizeCustom(market, result, now) {
+  // `display` is precomputed server-side when both halves exist, so the
+  // public shape matches provider markets exactly.
+  const display = result?.display ?? null;
+  const openM = toMinutes(market.openTime);
+  const closeM = toMinutes(market.closeTime);
+
+  return {
+    market: market.name,
+    slug: market.slug,
+    open: result?.pana ?? null,
+    close: null,
+    jodi: result?.jodi ?? null,
+    result: display,
+    openTime: to12Hour(openM),
+    closeTime: to12Hour(closeM),
+    ank: result?.ank ?? ankOf(display),
+    status: publicStatus(openM, closeM, now, display !== null),
+    source: 'custom',
+    // Internal only - stripped before the API responds.
+    _sort: closeM,
+    _marketId: String(market._id),
+    jodiUrl: `/jodi-chart-record/${market.slug}.php`,
+    panelUrl: `/panel-chart-record/${market.slug}.php`,
+  };
+}
+
+/**
+ * @param {Array} providerMarkets  normalized-by-provider markets
+ * @param {Array} customMarkets    Mongo Market docs
+ * @param {Map}   resultByMarket   marketId -> latest Result doc
+ * @param {number} now             minutes since midnight in the market
+ *                                 timezone; defaults to the real clock.
+ *                                 Injectable so the schedule can be tested.
+ */
+export function mergeMarkets(providerMarkets, customMarkets, resultByMarket, now = nowMinutes()) {
+  const provider = (providerMarkets ?? []).map((r) => normalizeProvider(r, now));
+  const custom = (customMarkets ?? []).map((m) =>
+    normalizeCustom(m, resultByMarket?.get(String(m._id)), now)
+  );
+
+  const all = [...provider, ...custom];
+
+  // Interleave by close time. Anything without a parseable time sinks to the
+  // end rather than scrambling the ordering.
+  all.sort((a, b) => {
+    const av = a._sort ?? Number.MAX_SAFE_INTEGER;
+    const bv = b._sort ?? Number.MAX_SAFE_INTEGER;
+    if (av !== bv) return av - bv;
+    // Stable tiebreak: alphabetical, so the order never flickers between loads.
+    return String(a.market).localeCompare(String(b.market));
+  });
+
+  // Drop the internal sort key before it reaches the client.
+  return all.map(({ _sort, _marketId, ...rest }) => rest);
+}

@@ -1,0 +1,12 @@
+node_modules/
+dist/
+_api/
+*.log
+_api.err
+.env
+
+# Never commit real API credentials
+api/config.local.php
+
+# Admin auth storage
+server/config.local.js
