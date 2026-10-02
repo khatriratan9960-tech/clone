@@ -11,6 +11,7 @@
  */
 import { revealCustom } from './server/services/customReveal.js';
 import { mergeMarkets } from './server/services/mergeMarkets.js';
+import { buildLiveBoard } from './server/services/liveBoard.js';
 
 const results = [];
 function check(name, cond, extra = '') {
@@ -167,6 +168,84 @@ check(
   nightLater.status === 'upcoming' && nightLater.result === null,
   `01:00 status=${nightLater.status} result=${nightLater.result}`
 );
+// --- 12. IMMINENT: a market due within 10 min is listed on the board. ---
+// Market opens 21:15. At 21:10 only 5 minutes remain, so it must already
+// appear on the live board instead of being buried under every other
+// upcoming market.
+{
+  const soon = { market: 'SOON MARKET', open: '111', close: '222', jodi: '33', openTime: '09:15 PM', closeTime: '09:45 PM' };
+  const later = { market: 'LATER MARKET', open: '111', close: '222', jodi: '33', openTime: '11:00 PM', closeTime: '11:30 PM' };
+
+  const now5 = hm('21:10');
+  const board = buildLiveBoard([soon, later], { now: now5 });
+
+  check(
+    '21:10 -> market opening at 21:15 is imminent',
+    board[0]?.market === 'SOON MARKET' && board[0]?.isImminent === true,
+    `first=${board[0]?.market} imminent=${board[0]?.isImminent}`
+  );
+  check(
+    '21:10 -> market opening at 23:00 is not imminent',
+    board.find((c) => c.market === 'LATER MARKET')?.isImminent === false
+  );
+  check(
+    'imminent market is still pending (no result leaked early)',
+    board[0]?.result === null && board[0]?.status === 'upcoming',
+    `status=${board[0]?.status} result=${board[0]?.result}`
+  );
+}
+
+// --- 13. The boundary: exactly 10 minutes counts, 11 does not. ---
+{
+  const m = { market: 'EDGE', open: '111', close: '222', jodi: '33', openTime: '09:15 PM', closeTime: '09:45 PM' };
+  const at10 = buildLiveBoard([m], { now: hm('21:05') })[0];
+  const at11 = buildLiveBoard([m], { now: hm('21:04') })[0];
+  check(
+    'exactly 10 min -> imminent, 11 min -> not',
+    at10.isImminent === true && at11.isImminent === false,
+    `10min=${at10.isImminent} 11min=${at11.isImminent}`
+  );
+}
+
+// --- 14. An imminent market outranks a closed one, so it is never cut. ---
+{
+  const soon = { market: 'SOON', open: '111', close: '222', jodi: '33', openTime: '09:15 PM', closeTime: '09:45 PM' };
+  // Several recently-closed markets that would otherwise fill the top slots.
+  const closedMarkets = [
+    { market: 'C1', open: '1', close: '2', jodi: '3', openTime: '06:00 PM', closeTime: '06:30 PM' },
+    { market: 'C2', open: '1', close: '2', jodi: '3', openTime: '06:30 PM', closeTime: '07:00 PM' },
+    { market: 'C3', open: '1', close: '2', jodi: '3', openTime: '07:00 PM', closeTime: '07:30 PM' },
+  ];
+  const board = buildLiveBoard([...closedMarkets, soon], { now: hm('21:10') });
+  check(
+    'imminent market ranks above recently-closed markets',
+    board[0]?.market === 'SOON',
+    `order=${board.map((c) => c.market).join(',')}`
+  );
+}
+
+// --- 15. A market already drawing is live, never "imminent". ---
+{
+  const m = { market: 'DRAWING', open: '257', close: '369', jodi: '79', openTime: '09:15 PM', closeTime: '09:45 PM' };
+  const card = buildLiveBoard([m], { now: hm('21:30') })[0];
+  check(
+    'drawing market is live, not imminent',
+    card.status === 'live' && card.isImminent === false,
+    `status=${card.status} imminent=${card.isImminent}`
+  );
+}
+
+// --- 16. Midnight wrap: imminent works just before midnight. ---
+{
+  const night = { market: 'NIGHT', open: '111', close: '222', jodi: '33', openTime: '11:50 PM', closeTime: '12:30 AM' };
+  const card = buildLiveBoard([night], { now: hm('23:45') })[0];
+  check(
+    '23:45 -> market opening 23:50 is imminent',
+    card.isImminent === true && card.result === null,
+    `imminent=${card.isImminent} result=${card.result}`
+  );
+}
+
 
 const failed = results.filter(([, ok]) => !ok);
 console.log(`\n${results.length - failed.length}/${results.length} passed`);

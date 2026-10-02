@@ -3,7 +3,7 @@ import { Result } from '../models/Result.js';
 import { fetchProviderMarkets, fetchProviderLive } from './provider.js';
 import { mergeMarkets } from './mergeMarkets.js';
 import { rankLiveCards, BOARD_SIZE } from './liveBoard.js';
-import { toMinutes, to12Hour, nowMinutes, windowStatus } from './marketClock.js';
+import { toMinutes, to12Hour, nowMinutes, windowStatus, isImminent } from './marketClock.js';
 import { revealCustom } from './customReveal.js';
 
 /** Today's date in YYYY-MM-DD using the server's local timezone. */
@@ -130,6 +130,9 @@ export async function getPublicLive(date = today(), now = nowMinutes()) {
         ank,
         isPending,
         status,
+        // Same imminent promotion the provider cards get, so a custom market
+        // about to declare shows up on the board instead of being cut.
+        isImminent: status === 'upcoming' && isImminent(openMin, closeMin, now),
         openTime: to12Hour(openMin),
         closeTime: to12Hour(closeMin),
         _open: openMin,

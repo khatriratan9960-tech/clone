@@ -175,8 +175,37 @@ Two things it fixes at the same time:
 Provider markets are untouched - their results come from the upstream API and
 are gated by `liveBoard.js` on the same clock.
 
-Run `node verify-timing.mjs` to see the whole schedule asserted (15 checks),
+Run `node verify-timing.mjs` to see the whole schedule asserted (22 checks),
 including midnight-wrapping markets such as 22:00 -> 00:30.
+
+### LIVE RESULT lists markets due within 10 minutes
+
+The live board is capped at 14 cards, so a market whose draw was minutes away
+used to sit at the bottom of the "upcoming" pile and get cut entirely - a
+reader only ever found out after the fact. A market is now **promoted onto the
+board as soon as it is within 10 minutes of declaring**, tagged `SOON`, ranked
+directly under whatever is drawing right now and above recently-closed results.
+
+| Time to next open/close | On the board? |
+|---|---|
+| more than 10 min | only if there is room, at the bottom as `upcoming` |
+| **10 min or less** | **always listed**, tagged `SOON`, ranked with the live tier |
+| inside its window | listed as `LIVE` (unchanged) |
+
+Details:
+
+- Applies to **both** provider and custom markets - they compete for the same
+  board slots on equal terms.
+- **No result is ever leaked by this.** An imminent market still shows
+  `Loading...`; only its *presence* is early, never its result. The publish
+  schedule above is untouched.
+- Measured forwards around the 24-hour circle, so a market opening at 00:15 is
+  correctly imminent at 23:50.
+- Tune the window with `LIVE_IMMINENT_MINUTES` (default `10`).
+- The `SOON` tag reuses the existing `LIVE` badge styling in
+  `src/components/LiveResults.jsx`, so it matches the original site's look.
+
+
 
 ### One row per half
 

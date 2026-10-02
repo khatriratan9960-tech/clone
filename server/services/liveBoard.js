@@ -18,7 +18,7 @@
  * the ranking and reveal rules stay identical.
  */
 
-import { toMinutes, to12Hour, nowMinutes, windowStatus } from './marketClock.js';
+import { toMinutes, to12Hour, nowMinutes, windowStatus, isImminent } from './marketClock.js';
 
 /** Keep the board the same size as the original site's card list. */
 const BOARD_SIZE = 14;
@@ -96,6 +96,9 @@ export function toLiveCard(raw, now = nowMinutes()) {
     // drawn yet - anything not yet revealed renders exactly like that.
     isPending: result === null,
     status,
+    // About to declare: promoted onto the board just before its draw so a
+    // reader can see it coming rather than finding it after the fact.
+    isImminent: status === 'upcoming' && isImminent(openMin, closeMin, now),
     openTime: to12Hour(openMin),
     closeTime: to12Hour(closeMin),
     // Internal sort keys, stripped before the API responds.
@@ -107,23 +110,29 @@ export function toLiveCard(raw, now = nowMinutes()) {
 /**
  * Rank the board the way a reader expects:
  *   1. markets drawing right now, soonest to close first
+ *   1b. markets about to draw (within the imminent window) - these would
+ *       otherwise be buried under every other upcoming market
  *   2. markets that closed most recently (newest results on top)
  *   3. markets still to open, soonest first (so the list is never empty)
  */
 export function rankLiveCards(cards) {
+  // A card is ranked "live" if it is drawing OR about to start drawing, so an
+  // imminent market sits directly under the one currently drawing rather than
+  // below every closed result on the page.
+  const tier = (c) => (c.status === 'live' || c.isImminent ? 'live' : c.status);
   const rank = { live: 0, closed: 1, upcoming: 2 };
 
   return [...cards].sort((a, b) => {
-    const ra = rank[a.status] ?? 3;
-    const rb = rank[b.status] ?? 3;
+    const ra = rank[tier(a)] ?? 3;
+    const rb = rank[tier(b)] ?? 3;
     if (ra !== rb) return ra - rb;
 
-    if (a.status === 'live') {
+    if (tier(a) === 'live') {
       // Drawing now: the one closing soonest is the most urgent.
       const av = a._close ?? Number.MAX_SAFE_INTEGER;
       const bv = b._close ?? Number.MAX_SAFE_INTEGER;
       if (av !== bv) return av - bv;
-    } else if (a.status === 'closed') {
+    } else if (tier(a) === 'closed') {
       // Just finished: the most recent close wins.
       const av = a._close ?? Number.MAX_SAFE_INTEGER;
       const bv = b._close ?? Number.MAX_SAFE_INTEGER;

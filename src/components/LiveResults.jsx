@@ -25,6 +25,9 @@ export default function LiveResults({ results, onRefresh, updatedAt }) {
                 {/* A market inside its draw window is flagged, so a reader
                     can tell "drawing now" from "already published". */}
                 {r.status === 'live' && <i className="lv-live-tag"> LIVE</i>}
+                {/* Due to declare within minutes but not drawing yet - shown
+                    early so the reader knows it is coming. */}
+                {r.isImminent && <i className="lv-live-tag"> SOON</i>}
               </span>
               {/* Original prints "Loading..." when a market has not drawn. */}
               <span className="h9">

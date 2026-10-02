@@ -115,3 +115,45 @@ export function publicStatus(openMin, closeMin, now, hasResult) {
   if (hasResult) return 'closed';
   return win === 'upcoming' ? 'upcoming' : 'pending';
 }
+
+/**
+ * How close a market is to its next scheduled event.
+ *
+ * The live board is capped at a fixed number of cards, so a market whose draw
+ * is minutes away would otherwise sit at the bottom of the "upcoming" pile and
+ * be pushed off the board entirely - the reader never sees it coming. This
+ * measures the distance to the next open/close boundary so such a market can
+ * be promoted onto the board in time to be useful.
+ *
+ * Default 10 minutes; override with LIVE_IMMINENT_MINUTES.
+ */
+export const IMMINENT_MINUTES = Number(process.env.LIVE_IMMINENT_MINUTES || 10);
+
+/**
+ * Minutes from `now` until the market's next open or close boundary.
+ *
+ * Works for midnight-wrapping windows too, because the distance is always
+ * measured forwards around the 24-hour circle. Returns null when the times
+ * cannot be parsed, and 0 when a boundary is exactly now.
+ */
+export function minutesToNextEvent(openMin, closeMin, now) {
+  if (openMin == null || closeMin == null) return null;
+
+  const n = ((Math.trunc(now) % 1440) + 1440) % 1440;
+  const forward = (t) => (((t - n) % 1440) + 1440) % 1440;
+
+  return Math.min(forward(openMin), forward(closeMin));
+}
+
+/**
+ * True when a market is due to declare a result within the imminent window.
+ *
+ * A market already inside its draw window is `live` and therefore already on
+ * the board, so this only promotes markets that are still `upcoming` - i.e.
+ * the ones at risk of being cut. A `closed` market already outranks upcoming
+ * ones, so it needs no promotion either.
+ */
+export function isImminent(openMin, closeMin, now, minutes = IMMINENT_MINUTES) {
+  const mins = minutesToNextEvent(openMin, closeMin, now);
+  return mins != null && mins <= minutes;
+}
