@@ -541,3 +541,41 @@ display: flex;
     color:#5b21b6;
     text-shadow:1px 1px 2px #fff;
 }
+
+/* ==========================================================================
+   LOCAL OVERRIDES (added during development - NOT part of the original
+   stylesheet extracted from the site). Kept in one block at the end so the
+   extracted rules above stay untouched.
+
+   The result number (.tkt-val span) was painted as gradient-clipped text with
+   a transparent fill:
+       background: linear-gradient(#4500bf,#670009);
+       -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+   which renders far too faint against the peach background - the winning
+   number was almost unreadable on the jodi and panel chart pages. Solid, dark,
+   bold text keeps the same purple/maroon intent with real contrast.
+   ========================================================================== */
+.tkt-val span,
+.tkt-val .chp-line {
+    background:none;
+    -webkit-background-clip:border-box;
+    background-clip:border-box;
+    -webkit-text-fill-color:#6a0033;
+    color:#6a0033;
+    font-style:normal;
+    font-weight:700;
+    text-shadow:0 1px 0 rgb(255 255 255 / 70%);
+}
+/* Chart page result box: same dark maroon, no pale halo. */
+.chp-result .chp-line {
+    -webkit-text-fill-color:#6a0033;
+    color:#6a0033;
+    font-style:normal;
+    font-weight:700;
+    text-shadow:none;
+}
+/* Market name above the number - keep it clearly dark too. */
+.tkt-val h4 {
+    color:#0b1050;
+    font-weight:700;
+}

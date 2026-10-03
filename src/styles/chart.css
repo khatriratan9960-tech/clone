@@ -71,12 +71,14 @@
   font-size: 24px;
   color: #00008f;
 }
+/* The solid dark fill (and -webkit-text-fill-color) that cancels the original
+   gradient-clipped transparent text is set in styles/dpboss.css, because that
+   stylesheet is loaded after this one and would otherwise win the cascade. */
 .chp-result .chp-line {
   display: block;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
-  color: #880e4f;
-  text-shadow: 1px 1px 2px #ffe2c6;
+  color: #6a0033;
   padding: 2px 0;
 }
 
