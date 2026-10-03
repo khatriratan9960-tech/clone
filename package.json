@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "api": "node server/index.js",
     "api:dev": "nodemon server/index.js",
-    "mock": "node mock-server.mjs"
+    "mock": "node mock-server.mjs",
+    "verify:chart": "node verify-chart.mjs",
+    "verify:mock": "node normalize-mock.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

@@ -68,11 +68,17 @@ const {
   linkZones,
 } = sections;
 
+/**
+ * Winning ank = last digit of the JODI. A result is printed "open-jodi-close",
+ * so with three parts the jodi is the MIDDLE one - "257-48-369" -> 8, not 9.
+ * Mirrors deriveAnk() in php-api/_bootstrap.php.
+ */
 function deriveAnk(value) {
   if (!value) return null;
   const parts = String(value).split(/[^0-9]+/).filter(Boolean);
   if (!parts.length) return null;
-  const n = parseInt(parts[parts.length - 1], 10);
+  const part = parts.length >= 3 ? parts[1] : parts[parts.length - 1];
+  const n = parseInt(part, 10);
   return Number.isNaN(n) ? null : n % 10;
 }
 

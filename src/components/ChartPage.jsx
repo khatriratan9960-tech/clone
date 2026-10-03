@@ -1,4 +1,8 @@
-import { fakeChart, fakeBlurb } from '../lib/fakeChart.js';
+import '../styles/chart.css';
+import { fakeChart, chartCopy, hitDigits } from '../lib/fakeChart.js';
+import { JODI_CHART_LINKS, PANEL_CHART_LINKS, chartUrl } from '../lib/chartLinks.js';
+
+const DAYS = ['Mo', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 function slugFromPath() {
   const p = window.location.pathname;
@@ -14,36 +18,144 @@ function slugFromPath() {
   return { slug, type };
 }
 
+/* ------------------------------------------------------------------ *
+ * Chart cells
+ * ------------------------------------------------------------------ */
+
+/** Jodi cell: the two-digit result, red when one of its digits was drawn. */
 function CellJodi({ day }) {
-  if (day.missing) return <span style={{ color: '#c00' }}>{day.isFuture ? '' : '**'}</span>;
-  return <span>{day.jodi}</span>;
+  if (day.missing) return <span className="chp-miss">{day.isFuture ? '' : '**'}</span>;
+  const hot = hitDigits(day.open, day.close);
+  const hit = day.jodi.split('').some((d) => hot.has(d));
+  return <span className={`chp-jodi${hit ? ' hit' : ''}`}>{day.jodi}</span>;
 }
 
+/**
+ * Panel cell, laid out like the original site:
+ *
+ *      5   3
+ *      7 06 6
+ *      9   6
+ *
+ * left column = open panna, middle = jodi, right column = close panna.
+ * A digit that appears in BOTH panna is printed in red, and the jodi turns
+ * red when it carries one of those shared digits.
+ */
 function CellPanel({ day }) {
   if (day.missing) {
+    if (day.isFuture) return <span className="chp-miss" />;
     return (
-      <span style={{ color: '#c00', lineHeight: 1.1 }}>
-        *<br />**<br />*
+      <span className="chp-miss">
+        *
+        <br />
+        **
+        <br />*
       </span>
     );
   }
+  const hot = hitDigits(day.open, day.close);
+  const jodiHit = day.jodi.split('').some((d) => hot.has(d));
+  const dig = (panna, offset) =>
+    panna.split('').map((d, i) => (
+      <i key={`${offset}-${i}`} className={hot.has(d) ? 'hit' : undefined}>
+        {d}
+      </i>
+    ));
+
   return (
-    <span style={{ lineHeight: 1.25, display: 'inline-block' }}>
-      {day.open}
-      <br />
-      <b>{day.jodi}</b>
-      <br />
-      {day.close}
+    <span className="chp-cross">
+      {dig(day.open, 'o')}
+      <b className={jodiHit ? 'hit' : undefined}>{day.jodi}</b>
+      {dig(day.close, 'c')}
     </span>
+  );
+}
+
+/** Market name + latest "open-jodi-close" + refresh button. */
+function ResultBox({ market, latest }) {
+  return (
+    <div className="tkt-val chp-result">
+      <h4>{market}</h4>
+      <span className="chp-line">
+        {latest ? `${latest.open}-${latest.jodi}-${latest.close}` : '---'}
+      </span>
+      <p>
+        <button
+          type="button"
+          className="gm-clk"
+          style={{ position: 'static' }}
+          onClick={() => window.location.reload()}
+        >
+          Refresh Result
+        </button>
+      </p>
+    </div>
+  );
+}
+
+function ChartTable({ data, type }) {
+  const cols = type === 'panel' ? DAYS.length + 1 : DAYS.length;
+  return (
+    <div className="chp-table-wrap">
+      <table className="chp-table">
+        <thead>
+          <tr>
+            <th className="chp-cap" colSpan={cols}>
+              {data.market.toUpperCase()} MATKA {type === 'panel' ? 'PANEL' : 'JODI'} RECORD 2018 - 2026
+            </th>
+          </tr>
+          <tr>
+            {type === 'panel' && <th>Date</th>}
+            {DAYS.map((d) => (
+              <th key={d}>{d}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.weeks.map((w) => (
+            <tr key={w.label}>
+              {type === 'panel' && (
+                <td className="chp-date">
+                  {w.label.split(' to ')[0]}
+                  <br />
+                  to {w.label.split(' to ')[1]}
+                </td>
+              )}
+              {w.days.map((day, i) => (
+                <td key={i} className="chp-cell">
+                  {type === 'panel' ? <CellPanel day={day} /> : <CellJodi day={day} />}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function LinkZone({ title, links, type, current }) {
+  return (
+    <div className="sta-div chp-links">
+      <h6 className="chp-links-h">{title}</h6>
+      {links.map((l) => (
+        <a
+          key={`${type}-${l.slug}-${l.label}`}
+          href={chartUrl(type, l.slug)}
+          className={l.slug === current ? 'cur' : undefined}
+        >
+          {l.label}
+        </a>
+      ))}
+    </div>
   );
 }
 
 export default function ChartPage() {
   const { slug, type } = slugFromPath();
   const data = fakeChart(slug, 24);
-  const blurbs = fakeBlurb(data.market, type);
+  const copy = chartCopy(data.market, type, slug);
   const upper = data.market.toUpperCase();
-  const kind = type === 'panel' ? 'PANEL' : 'JODI';
 
   const goTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
   const goBottom = () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
@@ -56,74 +168,66 @@ export default function ChartPage() {
         </a>
       </div>
 
-      <div className="text2" style={{ padding: '8px 6px' }}>
-        <h2>
-          {upper} {kind} CHART
-        </h2>
-        <p style={{ fontSize: 12, fontWeight: 400 }}>
-          {upper} {kind === 'PANEL' ? 'Panel Chart' : 'Jodi Chart'} (FAKE PREVIEW) — {blurbs[0]}
-        </p>
+      <div className="chp-title">
+        {upper} {type === 'panel' ? 'PANEL' : 'JODI'} CHART
       </div>
 
-      <div className="tkt-val" style={{ padding: '8px 4px' }}>
-        <h4>{upper}</h4>
-        <span>
-          {data.latest ? `${data.latest.open}-${data.latest.jodi}-${data.latest.close}` : 'Loading...'}
-        </span>
-        <p>
-          <button type="button" className="gm-clk" style={{ position: 'static' }} onClick={() => window.location.reload()}>
-            Refresh Result
-          </button>
-        </p>
-        <p style={{ fontSize: 12 }}>
-          <a href="/" style={{ color: '#522f92' }}>← Back to home</a>
-          {'  |  '}
-          <a href={type === 'panel' ? `/jodi-chart-record/${slug}.php` : `/panel-chart-record/${slug}.php`} style={{ color: '#522f92' }}>
-            View {type === 'panel' ? 'Jodi' : 'Panel'} chart
-          </a>
-        </p>
+      <div className="chp-desc">
+        <h4>
+          {upper} {type === 'panel' ? 'PANEL RESULT CHART RECORDS' : 'JODI RESULT CHART RECORDS'}
+        </h4>
+        <p>{copy.intro}</p>
       </div>
 
-      <div style={{ margin: '6px 0', fontSize: 12 }}>
-        <button type="button" onClick={goBottom} style={{ marginRight: 8 }}>Go to Bottom</button>
-        <button type="button" onClick={goTop}>Go to Top</button>
+      <ResultBox market={upper} latest={data.latest} />
+
+      <div className="chp-nav">
+        <button type="button" onClick={goBottom}>
+          Go to Bottom
+        </button>
+        {type === 'panel' && <a href={chartUrl('jodi', slug)}>View Full Chart</a>}
       </div>
 
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }} className="l-obj-giv">
-          <thead>
-            <tr>
-              {type === 'panel' && <th style={{ border: '1px solid #999', padding: 4 }}>Date</th>}
-              {['Mo', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
-                <th key={d} style={{ border: '1px solid #999', padding: 4 }}>{d}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.weeks.map((w) => (
-              <tr key={w.label}>
-                {type === 'panel' && (
-                  <td style={{ border: '1px solid #999', padding: 4, fontSize: 11 }}>{w.label}</td>
-                )}
-                {w.days.map((day, i) => (
-                  <td key={i} style={{ border: '1px solid #999', padding: 4, textAlign: 'center' }}>
-                    {type === 'panel' ? <CellPanel day={day} /> : <CellJodi day={day} />}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ChartTable data={data} type={type} />
 
-      <div className="text3" style={{ marginTop: 8, textAlign: 'left' }}>
-        {blurbs.map((b, i) => (
-          <p key={i} style={{ fontSize: 12, marginBottom: 6 }}>{b}</p>
+      <ResultBox market={upper} latest={data.latest} />
+
+      <div className="seo-content-box chp-seo">
+        <p>{copy.intro}</p>
+
+        <h2>{copy.getHeading}</h2>
+        <p>{copy.getBody}</p>
+
+        <h2>{copy.mathHeading}</h2>
+        <p>{copy.mathBody}</p>
+
+        <h2>{copy.orderHeading}</h2>
+        <p>{copy.orderBody}</p>
+
+        <h2>Frequently Asked Questions (FAQs):</h2>
+        {copy.faqs.map(([q, a]) => (
+          <div key={q}>
+            <div className="chp-faq-h">{q}</div>
+            <p>{a}</p>
+          </div>
         ))}
       </div>
 
+      <div className="chp-nav">
+        <button type="button" onClick={goTop}>
+          Go to Top
+        </button>
+      </div>
+
+      <LinkZone title="SATTA MATKA JODI CHART" links={JODI_CHART_LINKS} type="jodi" current={slug} />
+      {type === 'panel' && (
+        <LinkZone title="MATKA PANEL CHART" links={PANEL_CHART_LINKS} type="panel" current={slug} />
+      )}
+
       <div style={{ margin: '8px 0' }}>
-        <a href="/" className="gm-clk" style={{ position: 'static', display: 'inline-block' }}>Back to Home</a>
+        <a href="/" className="gm-clk" style={{ position: 'static', display: 'inline-block' }}>
+          Back to Home
+        </a>
       </div>
     </>
   );

@@ -43,7 +43,12 @@ function providerName(): string
 
 /**
  * Derive the single "ank" digit from a result value.
- * Accepts "369" -> 9, "257-48-369" -> 9, "890-7" -> 7, "137-8" -> 8.
+ *
+ * The winning ank is the last digit of the JODI, and a result is printed as
+ * "open-jodi-close", so for three parts the jodi is the MIDDLE one:
+ *   "257-48-369" -> 8   ("369" would be the close panna, not the result)
+ *   "257-48"     -> 8
+ *   "369"        -> 9
  * Returns null when no numeric result is present (pending market).
  */
 function deriveAnk(mixed $value): ?int
@@ -52,18 +57,20 @@ function deriveAnk(mixed $value): ?int
         return null;
     }
 
-    // Split on the '-' separators, keep the last numeric chunk.
+    // Split on the '-' separators, keep the numeric chunks.
     $parts = preg_split('/[^0-9]+/', (string) $value, -1, PREG_SPLIT_NO_EMPTY);
     if (!$parts) {
         return null;
     }
 
-    $last = end($parts);
-    if ($last === '' || !is_numeric($last)) {
+    // three parts -> the jodi is in the middle; otherwise the last part.
+    $part = count($parts) >= 3 ? $parts[1] : end($parts);
+
+    if ($part === '' || !is_numeric($part)) {
         return null;
     }
 
-    $num = (int) $last;
+    $num = (int) $part;
     if ($num < 0) {
         return null;
     }

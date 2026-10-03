@@ -1,0 +1,226 @@
+/* ==========================================================================
+   Jodi / Panel chart pages (/jodi-chart-record/*, /panel-chart-record/*)
+   Scoped with .chp-* so the loud homepage styling is untouched.
+   ========================================================================== */
+
+/* --- Pink page title bar (SRIDEVI JODI CHART / SRIDEVI PANEL CHART) --- */
+.chp-title {
+  background: #ff00a2;
+  color: #fff8f8;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-shadow: 1px 1px 2px #000;
+  padding: 5px 10px;
+  margin-bottom: 2px;
+}
+
+/* --- Intro / description box under the title --- */
+.chp-desc {
+  border: 1px solid #0014e2;
+  background: #fc9;
+  padding: 5px 6px;
+  margin-bottom: 2px;
+  font-style: normal;
+}
+.chp-desc h4 {
+  color: #061699;
+  font-size: 17px;
+  text-shadow: 1px 1px 2px #fff;
+}
+.chp-desc p {
+  color: #061699;
+  font-size: 13px;
+  line-height: 1.35;
+  text-shadow: 1px 1px 2px #fff;
+}
+
+/* --- Go to Top / Go to Bottom controls --- */
+.chp-nav {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.chp-nav button,
+.chp-nav a {
+  font-style: normal;
+  font-weight: 700;
+  font-size: 16px;
+  color: #00008f;
+  background: #a3d3ff;
+  border: 1px solid #003db6;
+  padding: 8px 22px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* --- Result box (market name + open-jodi-close + refresh) --- */
+.chp-result {
+  outline: 0;
+  border: 1px solid #4a4a4a;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 6px 4px;
+  font-size: 20px;
+  color: #000;
+}
+.chp-result h4 {
+  font-size: 24px;
+  color: #00008f;
+}
+.chp-result .chp-line {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  color: #880e4f;
+  text-shadow: 1px 1px 2px #ffe2c6;
+  padding: 2px 0;
+}
+
+/* --- Chart table --- */
+.chp-table-wrap {
+  overflow-x: auto;
+}
+.chp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin: 0 auto;
+}
+.chp-table .chp-cap {
+  background: #31489b;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  text-shadow: 1px 1px 2px #000;
+  border: 1px solid #0b2c86;
+  padding: 5px;
+  letter-spacing: 0.5px;
+}
+.chp-table th,
+.chp-table td {
+  border: 1px solid #1a73c7;
+  padding: 2px 6px;
+  text-align: center;
+  font-style: normal;
+}
+.chp-table thead th {
+  background: #ffd200;
+  color: #000;
+  font-size: 15px;
+  border-color: #1a73c7;
+}
+.chp-table td.chp-date {
+  background: #ffe9b0;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.15;
+  white-space: nowrap;
+  color: #000;
+}
+.chp-table td.chp-cell {
+  font-size: 17px;
+  font-weight: 700;
+  color: #000;
+}
+.chp-table td.chp-cell span {
+  text-shadow: none;
+}
+
+/* --- Jodi chart cell: red when a jodi digit is drawn in the panna --- */
+.chp-jodi.hit {
+  color: #f00;
+}
+
+/* --- Panel chart cell: the dpboss "cross" (open | jodi | close) --- */
+.chp-cross {
+  display: inline-grid;
+  grid-template-columns: 16px auto 16px;
+  grid-template-rows: repeat(3, auto);
+  justify-items: center;
+  align-items: center;
+  line-height: 1.25;
+  vertical-align: middle;
+}
+.chp-cross > i {
+  grid-column: 1;
+  font-style: normal;
+}
+.chp-cross > i:nth-child(1) { grid-row: 1; }
+.chp-cross > i:nth-child(2) { grid-row: 2; }
+.chp-cross > i:nth-child(3) { grid-row: 3; }
+.chp-cross > b {
+  grid-column: 2;
+  grid-row: 2;
+  font-size: 19px;
+}
+.chp-cross > i:nth-child(5) { grid-column: 3; grid-row: 1; }
+.chp-cross > i:nth-child(6) { grid-column: 3; grid-row: 2; }
+.chp-cross > i:nth-child(7) { grid-column: 3; grid-row: 3; }
+/* a digit that is present in BOTH the open and the close panna */
+.chp-cross > i.hit,
+.chp-cross > b.hit {
+  color: #f00;
+}
+/* missing draw, printed as * / ** / * like the original site */
+.chp-miss {
+  color: #f00;
+  line-height: 1.05;
+  font-weight: 700;
+}
+
+/* --- SEO / FAQ block --- */
+.chp-seo h2 {
+  color: #f00;
+  font-size: 24px;
+  margin: 18px 0 8px;
+}
+.chp-seo h3 {
+  color: #f00;
+  font-size: 21px;
+  margin: 18px 0 8px;
+}
+.chp-seo p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.chp-seo .chp-faq-h {
+  color: #000;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+
+/* --- Bottom chart link tables --- */
+.chp-links .chp-links-h {
+  background: #0b3d91;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-shadow: 1px 1px 2px #000;
+  padding: 5px;
+  margin: 0;
+}
+.chp-links a {
+  display: block;
+  padding: 5px 7px 4px;
+  border-top: 1px solid #1a73c7;
+  color: #000;
+  font-size: 20px;
+  font-style: normal;
+}
+.chp-links a.cur {
+  color: #c0007a;
+  font-weight: 700;
+}
+
+@media only screen and (max-width: 500px) {
+  .chp-table { font-size: 12px; }
+  .chp-table td.chp-cell { font-size: 14px; }
+  .chp-cross { grid-template-columns: 13px auto 13px; }
+}

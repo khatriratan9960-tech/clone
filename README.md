@@ -284,11 +284,20 @@ src/
   components/           Header, Hero, LuckyNumber, WhatsAppBanner,
                         LiveResults, JodiPanels, KeywordStrip, SeoContent,
                         StarlineTable, ApiPromo, PassList, WeeklyCharts,
-                        FreeGameZone, DayTables, Footer, PremiumPopup
+                        FreeGameZone, DayTables, Footer, PremiumPopup,
+                        ChartPage (jodi / panel chart pages)
+  lib/fakeChart.js      deterministic chart history + matka maths
+                        (ankOf / jodiOf / hitDigits) used by ChartPage
+  lib/chartLinks.js     bottom "SATTA MATKA JODI CHART" / "MATKA PANEL CHART" links
   styles/dpboss.css     original stylesheet, extracted verbatim (511 lines)
+  styles/chart.css      chart-page-only styles (title bar, panel cross cell)
 public/img/             dpboss-banner.png, dpboss-laxmi.jpg (extracted from the original)
 public/                  favicon.ico + apple-touch-icon-57/60/72/76/114/120/180.png
 verify.mjs              headless render assertions
+verify-chart.mjs        renders a chart page and asserts every Jodi matches
+                        its Open/Close Panna (node verify-chart.mjs panel sridevi)
+normalize-mock.mjs      audits php-api/data/mock.php against the same rules
+                        (npm run verify:mock)
 verify-vercel.mjs       simulates Vercel's /api/* -> function rewrite
 mock-server.mjs         Node stand-in for the PHP API
 vercel.json             Vercel routing: /api/* -> function, SPA fallback
@@ -297,6 +306,29 @@ vercel.json             Vercel routing: /api/* -> function, SPA fallback
 Market data lives in `php-api/data/mock.php`; the non-market page content
 lives in `php-api/data/sections.json`. Both servers read those two files, so
 the PHP API and the Node server always return identical payloads.
+
+### The matka rules every draw must follow
+
+Both the chart pages and the market fixtures are audited against these, so a
+wrong number can never reach the screen:
+
+1. **Panna order** - the three digits are always written increasing in the
+   sequence `1,2,3,4,5,6,7,8,9,0`, where `0` counts as the largest digit and is
+   therefore written last: `598` -> `589`, `901` -> `190`, `320` -> `230`.
+2. **Ank** - add the three digits of a panna and keep the last digit:
+   `1+3+5 = 9` -> 9, `4+7+9 = 20` -> 0, `5+5+7 = 17` -> 7. The Open Panna
+   gives the Open Ank, the Close Panna gives the Close Ank.
+3. **Jodi** - the two Anks written side by side, **not** their sum: the Open Ank
+   is the first digit and the Close Ank is the second.
+   `579` -> `1` and `366` -> `5` gives `579-15-366`.
+
+Run `npm run verify:mock` (fixture) and `npm run verify:chart -- panel sridevi`
+(chart pages) to re-check.
+
+> Note on the fixture field names: `close` holds the **jodi** and `jodi` holds
+> the **close panna** - that is the upstream provider's shape, documented in
+> `server/services/liveBoard.js` - which is why the printed result string stays
+> `open-jodi-close`.
 
 ### Important: Final Ank is NOT derived from the jodi
 
