@@ -1,7 +1,7 @@
+import { useEffect, useState } from 'react';
 import '../styles/chart.css';
 import { useApi } from '../hooks/useApi.js';
 import { api } from '../api/client.js';
-import '../styles/chart.css';
 import { fakeChart, chartCopy, hitDigits } from '../lib/fakeChart.js';
 import { JODI_CHART_LINKS, PANEL_CHART_LINKS, chartUrl } from '../lib/chartLinks.js';
 
