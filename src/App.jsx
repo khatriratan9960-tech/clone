@@ -28,7 +28,9 @@ function Banner({ error, provider }) {
         <small>
           {error
             ? error
-            : 'Serving local mock data. Set DPBOSS_PROVIDER=paid to switch to the live API.'}
+              : provider === 'matka'
+                ? 'Serving the matka trial API (matkaapi.com) - every draw is streamed live and stored as chart history.'
+                : 'Serving local mock data. Set DPBOSS_PROVIDER=paid (or MATKA_DOMAIN_KEY) to switch to the live API.'}
         </small>
       </span>
     </div>

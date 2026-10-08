@@ -1,0 +1,268 @@
+import { ChartEntry } from '../models/ChartEntry.js';
+import { Market } from '../models/Market.js';
+import { Result } from '../models/Result.js';
+import { todayStr as today } from './marketClock.js';
+
+/**
+ * DAILY CHART HISTORY FOR THE TRIAL API.
+ *
+ * The trial API is stateless: it only hands back today's draw. To show
+ * charts in the future we store every completed draw in MongoDB as soon as
+ * it appears:
+ *
+ *   GET /api/home.php and /api/live-result.php -> fetchMatkaMarkets() ->
+ *     syncChartHistory(rows) -> upsert { slug, date } into ChartEntry
+ *
+ * A 5-minute throttle keeps the writes sane; upserts are keyed {slug, date}
+ * so repeated syncs are no-ops. Chart pages read back {weeks, latest,
+ * storedDays} from this collection plus the operator's own Result rows for
+ * custom markets.
+ */
+
+const SYNC_INTERVAL_MS = Number(process.env.CHART_SYNC_MS ?? 5 * 60 * 1000);
+const ANK_RE = /^\d+$/;
+
+let lastSync = 0;
+
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
+/** "2026-10-08" -> "08/10/2026" (chart week labels). */
+function formatShort(dateStr) {
+  const m = String(dateStr ?? '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return dateStr ?? '';
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+
+/** Add days to a YYYY-MM-DD date (server local timezone). */
+export function addDays(dateStr, n) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d + n);
+  return `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
+}
+
+/** Monday of the week containing that date. */
+export function mondayOf(dateStr) {
+  const [y, m, day] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, day);
+  const diff = day === 0 ? -6 : day - 1; // Sunday -> previous Monday
+  dt.setDate(dt.getDate() + diff);
+  return `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
+}
+
+/** Last digit of a 3-digit panna (sum of digits mod 10). */
+function ankOf(pana) {
+  const s = String(pana ?? '').trim();
+  if (!ANK_RE.test(s)) return null;
+  let sum = 0;
+  for (const ch of s) sum += Number(ch);
+  return sum % 10;
+}
+
+/** One chart day: real stored data OR a marked-missing placeholder
+ *  (mirrors the fakeChart week-cell shape so ChartPage.jsx never has to
+ *  know where the data came from). */
+function makeDay(entry, custom, date) {
+  const isFuture = date > today();
+  if (entry) {
+    return {
+      open: entry.openPana,
+      close: entry.closePana,
+      jodi: entry.jodi,
+      openAnk: ankOf(entry.openPana),
+      closeAnk: ankOf(entry.closePana),
+      missing: false,
+      isFuture,
+    };
+  }
+  if (custom) {
+    return {
+      open: custom.open,
+      close: custom.close,
+      jodi: custom.jodi,
+      openAnk: custom.openAnk,
+      closeAnk: custom.closeAnk,
+      missing: false,
+      isFuture: false,
+    };
+  }
+  return { missing: true, isFuture };
+}
+
+/** Build a chart day from a normalized provider row. */
+function entryToDay(entry) {
+  return {
+    open: entry.openPana,
+    close: entry.closePana,
+    jodi: entry.jodi,
+    openAnk: ankOf(entry.openPana),
+    closeAnk: ankOf(entry.closePana),
+    missing: false,
+    isFuture: false,
+  };
+}
+
+function marketName(slug, marketDoc, entries) {
+  if (marketDoc?.name) return marketDoc.name;
+  if (entries?.length) return entries[0].market ?? slug;
+  return slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/** A row only becomes a chart day once it carries a full open + jodi +
+ *  close panna (3-part draw). Roster rows carry open/close/jodi as undefined
+ *  (or partial), so they never pass. */
+function isCompleteRow(row) {
+  return Boolean(
+    row &&
+      /^\d{3}$/.test(String(row.open ?? '')) &&
+      /^\d{2}$/.test(String(row.close ?? '')) &&
+      /^\d{3}$/.test(String(row.jodi ?? ''))
+  );
+}
+
+/** Store completed draws. 5-minute throttle, idempotent upserts keyed
+ *  {slug, date}. NOTE: the field contract carries close=jodi and
+ *  jodi=closePana (matches the fixture naming trap), so map accordingly. */
+export async function syncChartHistory(rows, source = 'matka') {
+  if (!rows?.length) return 0;
+  if (Date.now() - lastSync < SYNC_INTERVAL_MS) return 0;
+  lastSync = Date.now();
+  const ops = [];
+  for (const row of rows) {
+    if (!isCompleteRow(row)) continue;
+    const slug = String(row.slug ?? row.name ?? row.market ?? '').toLowerCase().replace(/[^a-z0-9-]/g, '');
+    const date = String(row.date ?? today()).slice(0, 10);
+    const market = row.market ?? row.name ?? slug;
+    ops.push({
+      updateOne: {
+        filter: { slug, date },
+        update: {
+          $set: {
+            slug,
+            market,
+            date,
+            openPana: String(row.open ?? '').slice(0, 3),
+            jodi: String(row.close ?? '').slice(0, 2),
+            closePana: String(row.jodi ?? '').slice(0, 3),
+            display: `${String(row.open ?? '')}-${String(row.close ?? '')}-${String(row.jodi ?? '')}`,
+            source,
+          },
+        },
+        upsert: true,
+      },
+    });
+  }
+  if (!ops.length) return 0;
+  try {
+    await ChartEntry.bulkWrite(ops, { ordered: false });
+    return ops.length;
+  } catch (err) {
+    console.warn('[chartHistory] sync failed:', err.message);
+    return 0;
+  }
+}
+
+/** Fire-and-forget wrapper for the live path: the board must never wait on
+ *  the chart write - the promise resolves in the background between polls.
+ *  Errors are already swallowed inside syncChartHistory. */
+export function syncChartHistoryFromCards(cards, source = 'matka') {
+  if (!cards?.length) return;
+  syncChartHistory(
+    cards.map((c) => ({ slug: c.slug, market: c.market, ...parseDisplay(c.result) })),
+    source
+  ).catch(() => {});
+}
+
+/** "579-15-366" or "15" -> { open, close, jodi } row shape for the sync. */
+function parseDisplay(result) {
+  const parts = String(result ?? '').split('-');
+  if (parts.length === 3) return { open: parts[0], close: parts[1], jodi: parts[2] };
+  return {};
+}
+/** One public chart payload for a market: { market, weeks, latest, storedDays, source }. */
+export async function getChartHistory(slug, weeks = 24) {
+  const slugSlug = String(slug ?? '').toLowerCase().replace(/[^a-z0-9-]/g, '');
+  if (!slugSlug) {
+    return { market: '', weeks: [], latest: null, storedDays: 0, source: 'empty' };
+  }
+  const todayD = today();
+  const weekStart = mondayOf(todayD);
+  const rangeStart = addDays(weekStart, -(weeks - 1) * 7);
+  const rangeEnd = addDays(weekStart, weeks * 7 - 1);
+
+  // Provider history (matka / mock) - the trial API stores every completed
+  // draw, so the last 24 weeks of real data are at hand.
+  const entries = await ChartEntry.find({
+    slug: slugSlug,
+    date: { $gte: rangeStart, $lte: rangeEnd },
+  })
+    .sort({ date: 1 })
+    .lean();
+  const byDate = new Map();
+  for (const e of entries) byDate.set(e.date, e);
+
+  // Operator-declared custom markets: their halves live in Result (session
+  // open/close). Those rows are the public API for custom draws.
+  let marketDoc = null;
+  try {
+    marketDoc = await Market.findOne({ slug: slugSlug }).lean();
+  } catch {
+    /* non-critical */
+  }
+  const custom = new Map();
+  if (marketDoc) {
+    try {
+      const results = await Result.find({
+        market: marketDoc._id,
+        date: { $gte: rangeStart, $lte: rangeEnd },
+        jodiComplete: true,
+      })
+        .sort({ date: 1 })
+        .lean();
+      for (const r of results) {
+        if (!custom.has(r.date)) {
+          custom.set(r.date, {
+            open: r.pana,
+            close: r.pana,
+            jodi: r.jodi,
+            openAnk: ankOf(r.pana),
+            closeAnk: ankOf(r.pana),
+          });
+        }
+      }
+    } catch {
+      /* non-critical */
+    }
+  }
+
+  const weeksArr = [];
+  let latest = null;
+  let storedDays = 0;
+  let cursor = weekStart;
+  for (let w = 0; w < weeks; w++) {
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const date = addDays(cursor, i);
+      const entry = byDate.get(date);
+      days.push(makeDay(entry, custom.get(date), date));
+      if (entry) {
+        storedDays++;
+        if (!latest || date > latest.date) {
+          latest = { open: entry.openPana, close: entry.closePana, jodi: entry.jodi, date };
+        }
+      }
+    }
+    weeksArr.push({ label: formatShort(cursor) + ' to ' + formatShort(addDays(cursor, 6)), days });
+    cursor = addDays(cursor, 7);
+  }
+
+  return {
+    market: marketName(slugSlug, marketDoc, entries),
+    weeks: weeksArr,
+    latest,
+    storedDays,
+    source: storedDays > 0 ? 'matka' : 'empty',
+  };
+}
+

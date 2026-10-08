@@ -48,4 +48,13 @@ export const api = {
     getJson(slug ? `/markets.php?slug=${encodeURIComponent(slug)}` : '/markets.php'),
   starline: (slug = '') =>
     getJson(`/starline.php${slug ? `?slug=${encodeURIComponent(slug)}` : ''}`),
+
+  /**
+   * Chart data for a market. The server reads the MongoDB chart-history
+   * collection (and the operator's Result rows for custom markets) and returns
+   * the same shape fakeChart() uses, so the chart pages can show real history
+   * as soon as the trial API has stored a draw for a market.
+   */
+  chart: (slug, weeks = 24) =>
+    getJson(`/chart.php?slug=${encodeURIComponent(slug)}${weeks !== 24 ? `&weeks=${weeks}` : ''}`),
 };

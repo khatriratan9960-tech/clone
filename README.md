@@ -56,6 +56,28 @@ npm run dev          # http://localhost:5173
 The first boot seeds an admin user from `.env` (`ADMIN_USERNAME` /
 `ADMIN_PASSWORD`). Change that password before deploying anywhere public.
 
+## Trial Matka API (matkaapi.com)
+
+The live provider is the **trial API** (stateless, rate-limited, no history):
+
+```bash
+# .env
+MATKA_DOMAIN_KEY=<your trial key>
+MATKA_DOMAIN=clone-git-main-ratan18.vercel.app
+```
+
+- `market_list=1` (every market) + `market=all` (today's draws) are fetched
+  together, cached ~45s (honours the upstream 10-second gap), and unioned so
+  **every market the trial knows appears in the clone** - drawn or not.
+- The trial API stores nothing, so each completed draw is upserted into the
+  `ChartEntry` collection (`{slug, date}` unique) as soon as it appears -
+  throttled to `CHART_SYNC_MS` (5 min) and idempotent.
+- `GET /api/chart.php?slug=...&weeks=24` returns the stored history in the
+  same shape `fakeChart()` produces; `ChartPage.jsx` prefers it and falls
+  back to `fakeChart` while a market has no stored draws yet.
+- `npm run verify:chart` renders every chart page against stored history and
+  asserts the full chain: roster -> market list -> chart history -> chart pages.
+
 ## Admin panel
 
 JWT-authenticated, backed by MongoDB.

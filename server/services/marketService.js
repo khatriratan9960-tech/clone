@@ -1,6 +1,7 @@
 import { Market } from '../models/Market.js';
 import { Result } from '../models/Result.js';
 import { fetchProviderMarkets, fetchProviderLive } from './provider.js';
+import { syncChartHistory, syncChartHistoryFromCards } from './chartHistory.js';
 import { mergeMarkets } from './mergeMarkets.js';
 import { rankLiveCards, BOARD_SIZE } from './liveBoard.js';
 import { toMinutes, to12Hour, nowMinutes, windowStatus, isImminent } from './marketClock.js';
@@ -61,6 +62,12 @@ export async function getPublicMarkets(now = nowMinutes()) {
     loadCustomMarkets(),
     fetchProviderMarkets(),
   ]);
+
+  // The trial API is stateless - it only hands back today's draw. Keep the
+  // chart collection growing: every completed draw becomes one ChartEntry.
+  // The 5-minute throttle keeps the writes sane; upserts are keyed
+  // {slug, date} so repeats are no-ops.
+  syncChartHistory(providerMarkets);
 
   return mergeMarkets(providerMarkets, markets, halvesByMarket, now);
 }
@@ -142,8 +149,13 @@ export async function getPublicLive(date = today(), now = nowMinutes()) {
     .filter(Boolean);
 
   // One board, one ranking: provider cards and custom cards compete for
-  // the same top slots on equal terms.
+  // the same top slots on equal terms. Provider draws are stored as chart
+  // history the moment their 3-part result is published (the sync throttle
+  // keeps the writes sane; a market is only stored when its full draw is
+  // out). Custom markets write themselves: each declared Result row is
+  // picked up by getChartHistory() on the chart pages.
   const ranked = rankLiveCards([...providerLive, ...customCards]);
+  syncChartHistoryFromCards(providerLive, 'matka');
 
   // Drop the internal sort keys before responding.
   return ranked.slice(0, BOARD_SIZE).map(({ _open, _close, ...rest }) => rest);

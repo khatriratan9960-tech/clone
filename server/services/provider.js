@@ -1,6 +1,7 @@
 import { config } from '../config.js';
 import { readFileSync } from 'node:fs';
 import { buildLiveBoard } from './liveBoard.js';
+import { fetchMatkaMarkets } from './matkaApi.js';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -31,7 +32,9 @@ function loadFixtures() {
 
 const fixtures = loadFixtures();
 
+/** Which upstream are we actually talking to? */
 export function providerName() {
+  if (config.matka.domainKey) return 'matka';
   return config.provider.baseUrl ? 'paid' : 'mock';
 }
 
@@ -44,6 +47,11 @@ export function providerName() {
  * service and this transparently switches over - no other file changes.
  */
 export async function fetchProviderMarkets() {
+  if (config.matka.domainKey) {
+    // Trial: cached copy of all markets + today's draws, never throws the
+    // public page, rate-limit friendly (45s cache, 10s gap honoured).
+    return fetchMatkaMarkets();
+  }
   if (!config.provider.baseUrl) {
     return fixtures.rows.map((r) => ({ ...r }));
   }
@@ -76,9 +84,13 @@ export async function fetchProviderMarkets() {
 }
 
 export async function fetchProviderLive() {
+  if (config.matka.domainKey) {
+    // Trial: all markets + today's draws -> the live board builds the
+    // time-driven cards exactly like the fixture path.
+    const rows = await fetchMatkaMarkets();
+    return buildLiveBoard(rows);
+  }
   if (!config.provider.baseUrl) {
-    // Mock mode: build the board from the full fixture set against the real
-    // clock, so it advances through the day exactly like the live site.
     return buildLiveBoard(fixtures.rows);
   }
 

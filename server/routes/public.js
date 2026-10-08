@@ -2,6 +2,7 @@ import { Router } from 'express';
 import mongoose from 'mongoose';
 import { getPublicMarkets, getPublicLive, today } from '../services/marketService.js';
 import { providerName, getSections } from '../services/provider.js';
+import { getChartHistory } from '../services/chartHistory.js';
 
 const router = Router();
 
@@ -84,6 +85,17 @@ router.get('/health', (req, res) => {
     today: today(),
     uptimeSec: Math.round(process.uptime()),
   });
+});
+
+/** GET /api/chart.php?slug=kalyan-morning[&weeks=24] - chart history from MongoDB. */
+router.get('/chart.php', async (req, res) => {
+  const { slug, weeks } = req.query ?? {};
+  if (typeof slug !== 'string' || !slug.trim()) {
+    return res.status(400).json({ ok: false, error: 'slug is required' });
+  }
+  const weeksN = Math.min(Math.max(Number(weeks) || 24, 1), 100);
+  const history = await getChartHistory(slug.trim(), weeksN);
+  res.json({ ok: true, provider: providerName(), data: history });
 });
 
 export default router;

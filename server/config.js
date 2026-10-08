@@ -35,6 +35,19 @@ export const config = {
     syncMs: Number(process.env.PROVIDER_SYNC_MS || 5 * 60 * 1000),
     timeoutMs: Number(process.env.PROVIDER_TIMEOUT_MS || 15000),
   },
+
+  // Matka trial (matkaapi.com). Trial keys are domain-locked: the upstream
+  // only answers when we send the exact registered domain alongside the key.
+  // Defaults below are YOUR trial credentials for clone-git-main-ratan18,
+  // so Vercel works right after `git push` with zero env setup. Override
+  // with MATKA_DOMAIN_KEY / MATKA_DOMAIN env vars when the key is renewed.
+  matka: {
+    domainKey: process.env.MATKA_DOMAIN_KEY || '5e3ccd445deac2c892fb84a7a9988340',
+    domain: process.env.MATKA_DOMAIN || 'clone-git-main-ratan18.vercel.app',
+    baseUrl: process.env.MATKA_BASE_URL || 'https://www.matkaapi.com/mapi',
+    cacheMs: Number(process.env.MATKA_CACHE_MS || 45_000),
+    timeoutMs: Number(process.env.MATKA_TIMEOUT_MS || process.env.PROVIDER_TIMEOUT_MS || 15_000),
+  },
 };
 
 if (isProd && !config.jwtSecret) {

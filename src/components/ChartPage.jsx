@@ -1,4 +1,7 @@
 import '../styles/chart.css';
+import { useApi } from '../hooks/useApi.js';
+import { api } from '../api/client.js';
+import '../styles/chart.css';
 import { fakeChart, chartCopy, hitDigits } from '../lib/fakeChart.js';
 import { JODI_CHART_LINKS, PANEL_CHART_LINKS, chartUrl } from '../lib/chartLinks.js';
 
@@ -153,9 +156,28 @@ function LinkZone({ title, links, type, current }) {
 
 export default function ChartPage() {
   const { slug, type } = slugFromPath();
-  const data = fakeChart(slug, 24);
-  const copy = chartCopy(data.market, type, slug);
-  const upper = data.market.toUpperCase();
+  const [markets, setMarkets] = useState([]);
+  const { data, loading } = useApi(() => api.chart(slug), [slug]);
+  const stored = data?.data;
+  const useReal = Boolean(stored?.storedDays);
+  const chart = useReal
+    ? { market: stored.market, weeks: stored.weeks, latest: stored.latest }
+    : fakeChart(slug, 24);
+
+  // Pull the full market list once so the "all markets" link zone is always
+  // populated, no matter where the chart data comes from.
+  useEffect(() => {
+    let cancelled = false;
+    api.markets().then((r) => {
+      if (!cancelled) setMarkets(r?.data ?? []);
+    }).catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const upper = chart.market.toUpperCase();
+  const copy = chartCopy(chart.market, type, slug);
 
   const goTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
   const goBottom = () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
@@ -179,7 +201,7 @@ export default function ChartPage() {
         <p>{copy.intro}</p>
       </div>
 
-      <ResultBox market={upper} latest={data.latest} />
+      <ResultBox market={upper} latest={chart.latest} />
 
       <div className="chp-nav">
         <button type="button" onClick={goBottom}>
@@ -188,9 +210,9 @@ export default function ChartPage() {
         {type === 'panel' && <a href={chartUrl('jodi', slug)}>View Full Chart</a>}
       </div>
 
-      <ChartTable data={data} type={type} />
+      <ChartTable data={chart} type={type} />
 
-      <ResultBox market={upper} latest={data.latest} />
+      <ResultBox market={upper} latest={chart.latest} />
 
       <div className="seo-content-box chp-seo">
         <p>{copy.intro}</p>
@@ -219,9 +241,9 @@ export default function ChartPage() {
         </button>
       </div>
 
-      <LinkZone title="SATTA MATKA JODI CHART" links={JODI_CHART_LINKS} type="jodi" current={slug} />
+      <LinkZone title="SATTA MATKA JODI CHART" links={chartLinkList(markets, 'jodi')} type="jodi" current={slug} />
       {type === 'panel' && (
-        <LinkZone title="MATKA PANEL CHART" links={PANEL_CHART_LINKS} type="panel" current={slug} />
+        <LinkZone title="MATKA PANEL CHART" links={chartLinkList(markets, 'panel')} type="panel" current={slug} />
       )}
 
       <div style={{ margin: '8px 0' }}>
@@ -231,4 +253,18 @@ export default function ChartPage() {
       </div>
     </>
   );
+}
+
+/**
+ * Build the link zones for a market's chart page: the original site's static
+ * link list plus any market from the API that is not already listed there, so
+ * every market reachable from /api/markets.php gets its own chart page.
+ */
+function chartLinkList(markets, type) {
+  const staticLinks = type === 'panel' ? PANEL_CHART_LINKS : JODI_CHART_LINKS;
+  const known = new Set(staticLinks.map((l) => l.slug));
+  const extras = (markets ?? [])
+    .filter((m) => m && typeof m.slug === 'string' && m.slug && !known.has(m.slug))
+    .map((m) => ({ label: String(m.market ?? m.slug), slug: m.slug }));
+  return [...staticLinks, ...extras];
 }

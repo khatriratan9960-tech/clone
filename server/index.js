@@ -1,4 +1,5 @@
 import { app, ensureReady } from './app.js';
+import { providerName } from './services/provider.js';
 import { config } from './config.js';
 
 /**
@@ -9,9 +10,10 @@ async function start() {
   await ensureReady();
 
   app.listen(config.port, () => {
-    console.log(`[api] listening on http://localhost:${config.port} (provider: ${
-      config.provider.baseUrl ? 'paid' : 'mock'
-    })`);
+    console.log(`[api] listening on http://localhost:${config.port}`);
+    console.log(
+      `[provider] ${providerName()} - trial: ${config.matka.domainKey ? 'matka configured (domain_key set)' : 'mock (no trial key configured)'}`
+    );
   });
 }
 
