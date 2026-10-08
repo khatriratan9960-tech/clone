@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { getPublicMarkets, getPublicLive, today } from '../services/marketService.js';
 import { providerName, getSections } from '../services/provider.js';
 import { getChartHistory } from '../services/chartHistory.js';
+import { missingEnv } from '../config.js';
 
 const router = Router();
 
@@ -76,14 +77,17 @@ router.get('/starline.php', (req, res) => {
   });
 });
 
-/** GET /api/health - liveness + provider status. */
+/** GET /api/health - liveness + provider status. Never 500s: on Vercel this
+ *  is the first URL to check - missing env vars are reported as JSON. */
 router.get('/health', (req, res) => {
+  const missing = missingEnv();
   res.json({
-    ok: true,
+    ok: missing.length === 0,
     provider: providerName(),
     db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
     today: today(),
     uptimeSec: Math.round(process.uptime()),
+    ...(missing.length ? { missingEnv: missing } : {}),
   });
 });
 

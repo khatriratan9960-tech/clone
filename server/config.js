@@ -51,5 +51,18 @@ export const config = {
 };
 
 if (isProd && !config.jwtSecret) {
-  throw new Error('JWT_SECRET must be set in production');
+  // Do NOT throw here: on Vercel an import-time throw turns EVERY /api/*
+  // route (including /api/health) into an opaque 500 with no message.
+  // Instead the API boots, /api/health reports the missing vars as JSON,
+  // and only auth routes refuse to work until JWT_SECRET is set.
+  console.error('[config] JWT_SECRET must be set in production - auth routes will fail until it is');
+}
+
+/** Missing required env vars (production only). Empty = ready to serve. */
+export function missingEnv() {
+  if (!isProd) return [];
+  const missing = [];
+  if (!process.env.JWT_SECRET) missing.push('JWT_SECRET');
+  if (!process.env.MONGO_URL) missing.push('MONGO_URL (defaults to localhost, unreachable from Vercel)');
+  return missing;
 }

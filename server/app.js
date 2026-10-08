@@ -60,8 +60,11 @@ export function ensureReady() {
   return readyPromise;
 }
 
-// Every API request waits for the DB before touching a route.
+// Every API request waits for the DB before touching a route - EXCEPT
+// /api/health, which must answer even when the database is unreachable
+// (on Vercel that is exactly when you need it most).
 app.use('/api', (req, res, next) => {
+  if (req.path === '/health') return next();
   ensureReady().then(() => next(), next);
 });
 
