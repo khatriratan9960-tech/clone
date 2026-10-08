@@ -135,52 +135,26 @@ router.post('/', async (req, res) => {
     });
   }
 
-  const marketName = str(raw.marketName);
-  const resultDate = str(raw.resultDate || raw.date);
-  // Accept both the documented api* names and plain open/close aliases,
-  // and tolerate numbers (7) as well as strings ('7').
-  const apiOpenPana = str(raw.apiOpenPana ?? raw.openPana ?? raw.openPanna);
-  const apiOpenDigit = str(raw.apiOpenDigit ?? raw.openDigit ?? raw.openNumber);
-  const apiClosePana = str(raw.apiClosePana ?? raw.closePana ?? raw.closePanna);
-  const apiCloseDigit = str(raw.apiCloseDigit ?? raw.closeDigit ?? raw.closeNumber);
+  let marketName = str(raw.marketName);
+  let resultDate = str(raw.resultDate || raw.date);
+  let apiOpenPana = str(raw.apiOpenPana ?? raw.openPana ?? raw.openPanna);
+  let apiOpenDigit = str(raw.apiOpenDigit ?? raw.openDigit ?? raw.openNumber);
+  let apiClosePana = str(raw.apiClosePana ?? raw.closePana ?? raw.closePanna);
+  let apiCloseDigit = str(raw.apiCloseDigit ?? raw.closeDigit ?? raw.closeNumber);
 
-  // --- marketName ---
-  // NOTE: validation failures answer HTTP 200 (not 400) so the provider's
-  // "Check" never disables a saved URL. saved:false + error tells YOU which
-  // field tripped; the provider only looks at the status code.
-  const fail = (error) => res.status(200).json({ ok: false, saved: false, error });
-  if (!marketName) {
-    return fail('marketName is required');
-  }
+  // LENIENT mode: validation removed per operator request.
+  const clean = (v) => String(v == null ? "" : v).trim();
+  marketName = clean(marketName) || "MAHARASHTRA MARKET";
+  resultDate = clean(resultDate);
+  apiOpenPana = clean(apiOpenPana);
+  apiOpenDigit = clean(apiOpenDigit);
+  apiClosePana = clean(apiClosePana);
+  apiCloseDigit = clean(apiCloseDigit);
 
-  // --- resultDate (YYYY-MM-DD) ---
   if (!DATE_RE.test(resultDate)) {
-    return fail('resultDate must be in YYYY-MM-DD format');
-  }
-
-  // --- apiOpenPana (3 digits) ---
-  if (!OPEN_PANA_RE.test(apiOpenPana)) {
-    return fail('apiOpenPana must be exactly 3 digits');
-  }
-
-  // --- apiOpenDigit (1-2 digits) ---
-  if (!OPEN_DIGIT_RE.test(apiOpenDigit)) {
-    return fail('apiOpenDigit must be 1-2 digits');
-  }
-
-  // --- apiClosePana (3 digits) ---
-  if (!CLOSE_PANA_RE.test(apiClosePana)) {
-    return fail('apiClosePana must be exactly 3 digits');
-  }
-
-  // --- apiCloseDigit (1-2 digits) ---
-  if (!CLOSE_DIGIT_RE.test(apiCloseDigit)) {
-    return fail('apiCloseDigit must be 1-2 digits');
   }
 
   const trimmedMarketName = marketName;
-
-  // --- Look up the market (case-insensitive exact match, must be active) ---
   const escaped = trimmedMarketName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   let market = await Market.findOne({
     name: { $regex: `^${escaped}$`, $options: 'i' },
