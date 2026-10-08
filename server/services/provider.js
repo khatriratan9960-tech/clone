@@ -8,30 +8,52 @@ import { dirname, join } from 'node:path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const API_DIR = join(__dirname, '..', '..', 'php-api');
 
-/** Read the seeded fixtures so mock mode has real-looking markets. */
-function loadFixtures() {
-  const mockPhp = readFileSync(join(API_DIR, 'data', 'mock.php'), 'utf8');
-  const sections = JSON.parse(readFileSync(join(API_DIR, 'data', 'sections.json'), 'utf8'));
+/** Read the seeded fixtures so mock mode has real-looking markets.
+ *  LAZY: files are only read if mock mode is actually used. On Vercel an
+ *  import-time readFileSync throws when the data files are not bundled into
+ *  the serverless function, which would crash EVERY /api/* route at import. */
+let fixturesCache = null;
+function fixtures() {
+  if (!fixturesCache) {
+    const mockPhp = readFileSync(join(API_DIR, 'data', 'mock.php'), 'utf8');
+    const sections = JSON.parse(readFileSync(join(API_DIR, 'data', 'sections.json'), 'utf8'));
 
-  const rows = [];
-  const start = mockPhp.search(/function\s+mockMarkets\s*\(/);
-  const body = mockPhp.slice(mockPhp.indexOf('[', start), mockPhp.indexOf('];', start));
+    const rows = [];
+    const start = mockPhp.search(/function\s+mockMarkets\s*\(/);
+    const body = mockPhp.slice(mockPhp.indexOf('[', start), mockPhp.indexOf('];', start));
 
-  for (const chunk of body.split(/\]\s*,\s*\[/)) {
-    const obj = {};
-    const re = /'([A-Za-z]+)'\s*=>\s*(null|'((?:[^'\\]|\\.)*)')/g;
-    let m;
-    while ((m = re.exec(chunk)) !== null) {
-      obj[m[1]] = m[2] === 'null' ? null : m[3].replace(/\\'/g, "'");
+    for (const chunk of body.split(/\]\s*,\s*\[/)) {
+      const obj = {};
+      const re = /'([A-Za-z]+)'\s*=>\s*(null|'((?:[^'\\]|\\.)*)')/g;
+      let m;
+      while ((m = re.exec(chunk)) !== null) {
+        obj[m[1]] = m[2] === 'null' ? null : m[3].replace(/\\'/g, "'");
+      }
+      if (obj.market) rows.push(obj);
     }
-    if (obj.market) rows.push(obj);
-  }
 
-  return { rows, sections };
+    fixturesCache = { rows, sections };
+  }
+  return fixturesCache;
 }
 
-const fixtures = loadFixtures();
-
+/** Static content sections (golden ank, starlines, charts, game zones).
+ *  NEVER read from disk here: on Vercel the fixture files may not be bundled
+ *  into the serverless function, and a throw would crash every /api/* route.
+ *  These sections are editorial content identical for every visitor; an empty
+ *  shape keeps the homepage rendering while markets come from the trial API.
+ *  If mock mode is active and the files exist, fixtures() enriches this. */
+const EMPTY_SECTIONS = {
+  goldenAnk: null,
+  finalAnk: null,
+  starlineTables: { mainStarline: [] },
+  weeklyCharts: [],
+  freeGame: [],
+  dayTables: [],
+  passList: [],
+  passListDate: null,
+  linkZones: [],
+};
 /** Which upstream are we actually talking to? */
 export function providerName() {
   if (config.matka.domainKey) return 'matka';
@@ -53,7 +75,7 @@ export async function fetchProviderMarkets() {
     return fetchMatkaMarkets();
   }
   if (!config.provider.baseUrl) {
-    return fixtures.rows.map((r) => ({ ...r }));
+    return fixtures().rows.map((r) => ({ ...r }));
   }
 
   const controller = new AbortController();
@@ -91,7 +113,7 @@ export async function fetchProviderLive() {
     return buildLiveBoard(rows);
   }
   if (!config.provider.baseUrl) {
-    return buildLiveBoard(fixtures.rows);
+    return buildLiveBoard(fixtures().rows);
   }
 
   try {
@@ -106,4 +128,15 @@ export async function fetchProviderLive() {
   }
 }
 
-export const getSections = () => fixtures.sections;
+export const getSections = () => {
+  // Mock mode with bundled files: full editorial sections. Trial/paid mode
+  // or missing files: static empty shape - never throw, never touch disk.
+  if (!config.matka.domainKey && !config.provider.baseUrl) {
+    try {
+      return fixtures().sections;
+    } catch {
+      /* Vercel did not bundle php-api/data - fall through to empty */
+    }
+  }
+  return EMPTY_SECTIONS;
+};
