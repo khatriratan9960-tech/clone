@@ -39,7 +39,47 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
  *
  * Only Maharashtra markets are accepted. Any other market name returns 404.
  */
+router.get('/', (req, res) => {
+  res.status(200).json({
+    ok: true,
+    ready: true,
+    message: 'Maharashtra market webhook is live. Send POST with JSON body to push results.',
+    endpoint: 'POST /api/maharashtra-market-callback',
+    example: {
+      marketName: 'SITA MORNING',
+      resultDate: '2026-06-30',
+      apiOpenPana: '223',
+      apiOpenDigit: '7',
+      apiClosePana: '680',
+      apiCloseDigit: '6',
+    },
+  });
+});
+
+router.head('/', (req, res) => {
+  res.status(200).end();
+});
+
+/**
+ * Provider "Check Now" buttons typically ping the URL with an empty body
+ * (or a GET) just to see if it is reachable. Answer those probes with 200
+ * so the dashboard shows success — real pushes with fields still go
+ * through strict validation below.
+ */
+function isVerificationProbe(body) {
+  if (!body || typeof body !== 'object') return true;
+  return Object.keys(body).length === 0;
+}
+
 router.post('/', async (req, res) => {
+  if (isVerificationProbe(req.body)) {
+    return res.status(200).json({
+      ok: true,
+      ready: true,
+      message: 'Maharashtra market webhook is live. Send result JSON to push.',
+    });
+  }
+
   const {
     marketName,
     resultDate,
