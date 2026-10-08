@@ -46,7 +46,8 @@ export function addDays(dateStr, n) {
 export function mondayOf(dateStr) {
   const [y, m, day] = dateStr.split('-').map(Number);
   const dt = new Date(y, m - 1, day);
-  const diff = day === 0 ? -6 : day - 1; // Sunday -> previous Monday
+  const dow = dt.getDay(); // 0 = Sunday .. 6 = Saturday
+  const diff = dow === 0 ? -6 : 1 - dow; // back to Monday
   dt.setDate(dt.getDate() + diff);
   return `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
 }
@@ -169,7 +170,7 @@ export async function syncChartHistory(rows, source = 'matka') {
 export function syncChartHistoryFromCards(cards, source = 'matka') {
   if (!cards?.length) return;
   syncChartHistory(
-    cards.map((c) => ({ slug: c.slug, market: c.market, ...parseDisplay(c.result) })),
+    cards.map((c) => ({ slug: c.slug, market: c.market, date: c.date, ...parseDisplay(c.result) })),
     source
   ).catch(() => {});
 }

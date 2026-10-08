@@ -157,3 +157,18 @@ export function isImminent(openMin, closeMin, now, minutes = IMMINENT_MINUTES) {
   const mins = minutesToNextEvent(openMin, closeMin, now);
   return mins != null && mins <= minutes;
 }
+
+/**
+ * Today's date as "YYYY-MM-DD" in the market timezone (Asia/Kolkata).
+ * chartHistory.js imports this as `todayStr as today`.
+ */
+const DAY_FMT = new Intl.DateTimeFormat('en-CA', {
+  timeZone: MARKET_TZ,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+export function todayStr(date = new Date()) {
+  return DAY_FMT.format(date);
+}
