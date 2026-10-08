@@ -71,7 +71,13 @@ function isVerificationProbe(body) {
   return Object.keys(body).length === 0;
 }
 
+function str(v) {
+  if (v === null || v === undefined) return '';
+  return String(v).trim();
+}
+
 router.post('/', async (req, res) => {
+  try {
   if (isVerificationProbe(req.body)) {
     return res.status(200).json({
       ok: true,
@@ -80,52 +86,54 @@ router.post('/', async (req, res) => {
     });
   }
 
-  const {
-    marketName,
-    resultDate,
-    apiOpenPana,
-    apiOpenDigit,
-    apiClosePana,
-    apiCloseDigit,
-  } = req.body ?? {};
+  const raw = req.body ?? {};
+  const marketName = str(raw.marketName);
+  const resultDate = str(raw.resultDate || raw.date);
+  // Accept both the documented api* names and plain open/close aliases,
+  // and tolerate numbers (7) as well as strings ('7').
+  const apiOpenPana = str(raw.apiOpenPana ?? raw.openPana ?? raw.openPanna);
+  const apiOpenDigit = str(raw.apiOpenDigit ?? raw.openDigit ?? raw.openNumber);
+  const apiClosePana = str(raw.apiClosePana ?? raw.closePana ?? raw.closePanna);
+  const apiCloseDigit = str(raw.apiCloseDigit ?? raw.closeDigit ?? raw.closeNumber);
 
   // --- marketName ---
-  if (!marketName || typeof marketName !== 'string' || !marketName.trim()) {
+  if (!marketName) {
     return res.status(400).json({ ok: false, error: 'marketName is required' });
   }
 
   // --- resultDate (YYYY-MM-DD) ---
-  if (!resultDate || typeof resultDate !== 'string' || !DATE_RE.test(resultDate.trim())) {
+  if (!DATE_RE.test(resultDate)) {
     return res.status(400).json({ ok: false, error: 'resultDate must be in YYYY-MM-DD format' });
   }
 
   // --- apiOpenPana (3 digits) ---
-  if (!apiOpenPana || typeof apiOpenPana !== 'string' || !OPEN_PANA_RE.test(apiOpenPana.trim())) {
+  if (!OPEN_PANA_RE.test(apiOpenPana)) {
     return res.status(400).json({ ok: false, error: 'apiOpenPana must be exactly 3 digits' });
   }
 
   // --- apiOpenDigit (1-2 digits) ---
-  if (!apiOpenDigit || typeof apiOpenDigit !== 'string' || !OPEN_DIGIT_RE.test(apiOpenDigit.trim())) {
+  if (!OPEN_DIGIT_RE.test(apiOpenDigit)) {
     return res.status(400).json({ ok: false, error: 'apiOpenDigit must be 1-2 digits' });
   }
 
   // --- apiClosePana (3 digits) ---
-  if (!apiClosePana || typeof apiClosePana !== 'string' || !CLOSE_PANA_RE.test(apiClosePana.trim())) {
+  if (!CLOSE_PANA_RE.test(apiClosePana)) {
     return res.status(400).json({ ok: false, error: 'apiClosePana must be exactly 3 digits' });
   }
 
   // --- apiCloseDigit (1-2 digits) ---
-  if (!apiCloseDigit || typeof apiCloseDigit !== 'string' || !CLOSE_DIGIT_RE.test(apiCloseDigit.trim())) {
+  if (!CLOSE_DIGIT_RE.test(apiCloseDigit)) {
     return res.status(400).json({ ok: false, error: 'apiCloseDigit must be 1-2 digits' });
   }
 
-  const trimmedMarketName = marketName.trim();
+  const trimmedMarketName = marketName;
 
-  // --- Look up the market (case-insensitive) ---
+  // --- Look up the market (case-insensitive exact match, must be active) ---
+  const escaped = trimmedMarketName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   let market = await Market.findOne({
-    name: trimmedMarketName,
+    name: { $regex: `^${escaped}$`, $options: 'i' },
     active: true,
-  }).lean();
+  });
 
   // --- Auto-create the market if it doesn't exist ---
   if (!market) {
@@ -157,35 +165,47 @@ router.post('/', async (req, res) => {
   }
 
   // --- Upsert the OPEN half ---
+  // display/jodi/ank are required on the model, so compute them up-front —
+  // an upsert that only $sets number/pana would fail validation on insert.
+  const openBuilt = buildDisplay(
+    { number: apiOpenDigit, pana: apiOpenPana },
+    { number: apiCloseDigit, pana: apiClosePana }
+  );
   const open = await Result.findOneAndUpdate(
     { market: market._id, date: resultDate, session: 'open' },
     {
       $set: {
-        number: apiOpenDigit.trim(),
-        pana: apiOpenPana.trim(),
-        ank: Number(apiOpenPana.trim().slice(-1)),
+        number: apiOpenDigit,
+        pana: apiOpenPana,
+        ank: openBuilt.ank,
+        display: openBuilt.display,
+        jodi: openBuilt.jodi,
+        jodiComplete: openBuilt.jodiComplete,
       },
     },
-    { upsert: true, returnDocument: 'after' }
+    { upsert: true, returnDocument: 'after', runValidators: true, setDefaultsOnInsert: true }
   );
 
-  // --- Upsert the CLOSE half ---
+  // --- Upsert the CLOSE half (same computed display on both rows) ---
   const close = await Result.findOneAndUpdate(
     { market: market._id, date: resultDate, session: 'close' },
     {
       $set: {
-        number: apiCloseDigit.trim(),
-        pana: apiClosePana.trim(),
-        ank: Number(apiClosePana.trim().slice(-1)),
+        number: apiCloseDigit,
+        pana: apiClosePana,
+        ank: openBuilt.ank,
+        display: openBuilt.display,
+        jodi: openBuilt.jodi,
+        jodiComplete: openBuilt.jodiComplete,
       },
     },
-    { upsert: true, returnDocument: 'after' }
+    { upsert: true, returnDocument: 'after', runValidators: true, setDefaultsOnInsert: true }
   );
 
   // --- Build display + jodi ---
-  const built = buildDisplay(open, close);
+  const built = openBuilt;
 
-  res.status(201).json({
+  return res.status(200).json({
     ok: true,
     data: {
       market: market.name,
@@ -207,6 +227,15 @@ router.post('/', async (req, res) => {
       ank: built.ank,
     },
   });
+  } catch (err) {
+    // A provider's "check" counts any non-2xx as failure — log the real
+    // error server-side, but report which field tripped when it is ours.
+    console.error('[maharashtra-webhook]', err);
+    if (err?.name === 'ValidationError' || err?.code === 11000) {
+      return res.status(400).json({ ok: false, error: err.message });
+    }
+    return res.status(500).json({ ok: false, error: 'Failed to save result' });
+  }
 });
 
 export default router;
