@@ -126,7 +126,7 @@ router.post('/', async (req, res) => {
         ank: Number(apiOpenPana.trim().slice(-1)),
       },
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   // --- Upsert the CLOSE half ---
@@ -139,7 +139,7 @@ router.post('/', async (req, res) => {
         ank: Number(apiClosePana.trim().slice(-1)),
       },
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   // --- Build display + jodi ---
