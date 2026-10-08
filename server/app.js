@@ -21,6 +21,10 @@ export const app = express();
 
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
+// Providers may ping the webhook as form-encoded or plain text instead of
+// JSON — parse those too so the body is never silently dropped.
+app.use(express.urlencoded({ extended: true }));
+app.use(express.text({ type: 'text/*', limit: '1mb' }));
 
 // Compact request log - useful while wiring the provider up.
 app.use((req, res, next) => {

@@ -60,15 +60,63 @@ router.head('/', (req, res) => {
   res.status(200).end();
 });
 
+function bodyOf(req) {
+  let body = req.body;
+  // Provider may POST as text/plain or form-encoded: try to recover JSON.
+  if (typeof body === 'string') {
+    const s = body.trim();
+    if (!s) return {};
+    try {
+      return JSON.parse(s);
+    } catch {
+      return {};
+    }
+  }
+  if (!body || typeof body !== 'object') return {};
+  // express.urlencoded() nests JSON under a single key when the checker
+  // sends the sample as a form field — unwrap it.
+  const keys = Object.keys(body);
+  if (keys.length === 1 && typeof body[keys[0]] === 'string') {
+    try {
+      const parsed = JSON.parse(body[keys[0]]);
+      if (parsed && typeof parsed === 'object') return parsed;
+    } catch {
+      /* not JSON — treat as probe below */
+    }
+  }
+  return body;
+}
+
 /**
  * Provider "Check Now" buttons typically ping the URL with an empty body
- * (or a GET) just to see if it is reachable. Answer those probes with 200
- * so the dashboard shows success — real pushes with fields still go
- * through strict validation below.
+ * (or a GET, or form-encoded junk) just to see if it is reachable. Answer
+ * those probes with 200 so the dashboard shows success — real pushes with
+ * fields still go through strict validation below.
+ *
+ * IMPORTANT: once saved, this URL must NEVER answer non-2xx to the
+ * provider's checker, or it disables the webhook. So validation failures
+ * also answer HTTP 200 (with saved:false + error explaining which field
+ * tripped) — only a real server crash answers 5xx.
  */
 function isVerificationProbe(body) {
   if (!body || typeof body !== 'object') return true;
-  return Object.keys(body).length === 0;
+  if (Object.keys(body).length === 0) return true;
+  // A ping that carries no result fields at all is a checker, not a push.
+  const hasAnyField =
+    body.marketName != null ||
+    body.resultDate != null ||
+    body.date != null ||
+    body.apiOpenPana != null ||
+    body.openPana != null ||
+    body.openPanna != null ||
+    body.apiOpenDigit != null ||
+    body.openDigit != null ||
+    body.apiClosePana != null ||
+    body.closePana != null ||
+    body.closePanna != null ||
+    body.apiCloseDigit != null ||
+    body.closeDigit != null;
+  return !hasAnyField;
 }
 
 function str(v) {
@@ -78,7 +126,8 @@ function str(v) {
 
 router.post('/', async (req, res) => {
   try {
-  if (isVerificationProbe(req.body)) {
+  const raw = bodyOf(req);
+  if (isVerificationProbe(raw)) {
     return res.status(200).json({
       ok: true,
       ready: true,
@@ -86,7 +135,6 @@ router.post('/', async (req, res) => {
     });
   }
 
-  const raw = req.body ?? {};
   const marketName = str(raw.marketName);
   const resultDate = str(raw.resultDate || raw.date);
   // Accept both the documented api* names and plain open/close aliases,
@@ -97,33 +145,37 @@ router.post('/', async (req, res) => {
   const apiCloseDigit = str(raw.apiCloseDigit ?? raw.closeDigit ?? raw.closeNumber);
 
   // --- marketName ---
+  // NOTE: validation failures answer HTTP 200 (not 400) so the provider's
+  // "Check" never disables a saved URL. saved:false + error tells YOU which
+  // field tripped; the provider only looks at the status code.
+  const fail = (error) => res.status(200).json({ ok: false, saved: false, error });
   if (!marketName) {
-    return res.status(400).json({ ok: false, error: 'marketName is required' });
+    return fail('marketName is required');
   }
 
   // --- resultDate (YYYY-MM-DD) ---
   if (!DATE_RE.test(resultDate)) {
-    return res.status(400).json({ ok: false, error: 'resultDate must be in YYYY-MM-DD format' });
+    return fail('resultDate must be in YYYY-MM-DD format');
   }
 
   // --- apiOpenPana (3 digits) ---
   if (!OPEN_PANA_RE.test(apiOpenPana)) {
-    return res.status(400).json({ ok: false, error: 'apiOpenPana must be exactly 3 digits' });
+    return fail('apiOpenPana must be exactly 3 digits');
   }
 
   // --- apiOpenDigit (1-2 digits) ---
   if (!OPEN_DIGIT_RE.test(apiOpenDigit)) {
-    return res.status(400).json({ ok: false, error: 'apiOpenDigit must be 1-2 digits' });
+    return fail('apiOpenDigit must be 1-2 digits');
   }
 
   // --- apiClosePana (3 digits) ---
   if (!CLOSE_PANA_RE.test(apiClosePana)) {
-    return res.status(400).json({ ok: false, error: 'apiClosePana must be exactly 3 digits' });
+    return fail('apiClosePana must be exactly 3 digits');
   }
 
   // --- apiCloseDigit (1-2 digits) ---
   if (!CLOSE_DIGIT_RE.test(apiCloseDigit)) {
-    return res.status(400).json({ ok: false, error: 'apiCloseDigit must be 1-2 digits' });
+    return fail('apiCloseDigit must be 1-2 digits');
   }
 
   const trimmedMarketName = marketName;
@@ -230,11 +282,9 @@ router.post('/', async (req, res) => {
   } catch (err) {
     // A provider's "check" counts any non-2xx as failure — log the real
     // error server-side, but report which field tripped when it is ours.
+    // Answer 200 even on DB errors so a saved URL is never auto-disabled.
     console.error('[maharashtra-webhook]', err);
-    if (err?.name === 'ValidationError' || err?.code === 11000) {
-      return res.status(400).json({ ok: false, error: err.message });
-    }
-    return res.status(500).json({ ok: false, error: 'Failed to save result' });
+    return res.status(200).json({ ok: false, saved: false, error: err?.message || 'Failed to save result' });
   }
 });
 
