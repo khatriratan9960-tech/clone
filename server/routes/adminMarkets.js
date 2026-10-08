@@ -24,10 +24,15 @@ function to12Hour(hhmm) {
 
 /** GET /api/admin/markets - list custom markets, newest first. */
 router.get('/markets', async (req, res) => {
-  // A normal admin sees only what they created; a super admin sees everyone.
+  // A normal admin sees what they created PLUS webhook (push-driven) markets,
+  // which have no owner — otherwise a provider-fed market never appears in
+  // their result dropdown. A super admin sees everything.
   // (Markets adopted from a deleted user are reassigned to a super admin, so
   // they never end up ownerless.)
-  const filter = req.user.role === 'super_admin' ? {} : { createdBy: req.user._id };
+  const filter =
+    req.user.role === 'super_admin'
+      ? {}
+      : { $or: [{ createdBy: req.user._id }, { pushDriven: true }] };
 
   const markets = await Market.find(filter).sort({ createdAt: -1 }).lean();
 

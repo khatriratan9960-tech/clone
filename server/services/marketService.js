@@ -5,6 +5,7 @@ import { syncChartHistory, syncChartHistoryFromCards } from './chartHistory.js';
 import { mergeMarkets } from './mergeMarkets.js';
 import { rankLiveCards, BOARD_SIZE } from './liveBoard.js';
 import { toMinutes, to12Hour, nowMinutes, windowStatus, isImminent } from './marketClock.js';
+import { buildDisplay } from '../models/Result.js';
 import { revealCustom } from './customReveal.js';
 
 /** Today's date in YYYY-MM-DD using the server's local timezone. */
@@ -120,9 +121,30 @@ export async function getPublicLive(date = today(), now = nowMinutes()) {
       const closeMin = toMinutes(m.closeTime);
 
       // Nothing to say about a market we cannot schedule.
-      if (windowStatus(openMin, closeMin, now) === 'unknown') return null;
+      if (windowStatus(openMin, closeMin, now) === 'unknown' && !m.pushDriven) return null;
 
       const halves = byMarket.get(String(m._id)) ?? { open: null, close: null };
+
+      // Push-driven (webhook) markets are RESULT-driven: open-only "223-7"
+      // shows the moment it lands, full "223-76-680" when close lands.
+      if (m.pushDriven) {
+        const disp = halves.open || halves.close ? buildDisplay(halves.open, halves.close) : null;
+        const ok = disp && !disp.error ? disp : null;
+        return {
+          market: m.name,
+          slug: m.slug,
+          result: ok?.display ?? null,
+          ank: ok?.ank ?? null,
+          isPending: !ok,
+          status: ok ? (ok.jodiComplete ? 'closed' : 'live') : 'pending',
+          isImminent: false,
+          openTime: to12Hour(openMin),
+          closeTime: to12Hour(closeMin),
+          _open: openMin,
+          _close: closeMin,
+        };
+      }
+
       const { status, result, ank, isPending } = revealCustom(
         m,
         halves.open,

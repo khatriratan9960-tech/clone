@@ -8,6 +8,7 @@
  */
 
 import { toMinutes, to12Hour, nowMinutes, publicStatus } from './marketClock.js';
+import { buildDisplay } from '../models/Result.js';
 import { revealCustom } from './customReveal.js';
 
 // Re-exported so existing callers keep working from this module.
@@ -66,13 +67,44 @@ function normalizeProvider(raw, now) {
 /**
  * Shape one of the operator's markets + its declared halves.
  *
- * The reveal is CLOCK-GATED (customReveal.js): whatever the operator has
- * declared early stays hidden until the market's window actually reaches it,
- * so the public page can never show a result before its scheduled time.
+ * MANUALLY-declared markets stay CLOCK-GATED (customReveal.js): whatever the
+ * operator declares early stays hidden until the window reaches it, so the
+ * public page can never show a result before its scheduled time.
+ *
+ * PUSH-driven markets (Maharashtra webhook) are RESULT-driven instead: the
+ * provider pushes halves live, so OPEN-only shows "223-7" immediately and the
+ * full "223-76-680" the moment close lands — no clock gate.
  */
 function normalizeCustom(market, halves, now) {
   const openM = toMinutes(market.openTime);
   const closeM = toMinutes(market.closeTime);
+
+  // Push-driven (webhook) markets: RESULT-driven, no clock gate.
+  //  - open only  -> "223-7" the moment the open push lands
+  //  - both halves -> "223-76-680" the moment the close push lands
+  // Manual markets keep the clock gate via revealCustom().
+  if (market.pushDriven) {
+    const built = halves?.open || halves?.close ? buildDisplay(halves?.open ?? null, halves?.close ?? null) : null;
+    const ok = built && !built.error ? built : null;
+    return {
+      market: market.name,
+      slug: market.slug,
+      open: halves?.open?.pana ?? null,
+      close: halves?.close?.pana ?? null,
+      jodi: ok?.jodi ?? null,
+      result: ok?.display ?? null,
+      openTime: to12Hour(openM),
+      closeTime: to12Hour(closeM),
+      ank: ok?.ank ?? null,
+      status: ok ? (ok.jodiComplete ? 'closed' : 'live') : 'pending',
+      source: 'custom',
+      // Internal only - stripped before the API responds.
+      _sort: closeM,
+      _marketId: String(market._id),
+      jodiUrl: `/jodi-chart-record/${market.slug}.php`,
+      panelUrl: `/panel-chart-record/${market.slug}.php`,
+    };
+  }
 
   const { status, result, ank, jodi, openRow } = revealCustom(
     market,

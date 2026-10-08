@@ -61,9 +61,12 @@ router.post('/results', async (req, res) => {
   const market = await Market.findById(marketId);
   if (!market) return res.status(404).json({ ok: false, error: 'Market not found' });
 
-  // Only the owner or a super admin may declare for this market.
+  // Owner, super admin, or any admin for push-driven (webhook) markets —
+  // those have no owner (created by the provider push), so without this no
+  // normal admin would ever see them in their result dropdown.
   const isOwner = market.createdBy && String(market.createdBy) === String(req.user._id);
-  if (!isOwner && req.user.role !== 'super_admin') {
+  const isPushMarket = market.pushDriven === true;
+  if (!isOwner && !isPushMarket && req.user.role !== 'super_admin') {
     return res
       .status(403)
       .json({ ok: false, error: 'You can only declare results for your own markets' });

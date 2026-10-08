@@ -22,6 +22,12 @@ const marketSchema = new mongoose.Schema(
 
     active: { type: Boolean, default: true },
 
+    // True for markets fed by an external push provider (Maharashtra webhook).
+    // Push-driven markets reveal by RESULT, not by clock: open-only shows
+    // "223-7" until the close half lands, then the full "223-76-680" at once.
+    // Manually-declared markets keep the clock gate so early declares stay hidden.
+    pushDriven: { type: Boolean, default: false },
+
     // Optional grouping shown in the admin list.
     category: { type: String, default: 'Custom', trim: true, maxlength: 40 },
 

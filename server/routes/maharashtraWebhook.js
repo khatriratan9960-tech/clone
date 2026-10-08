@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { Market } from '../models/Market.js';
 import { Result, buildDisplay } from '../models/Result.js';
+import { todayStr } from '../services/marketClock.js';
 
 const router = Router();
 
@@ -151,7 +152,38 @@ router.post('/', async (req, res) => {
   apiClosePana = clean(apiClosePana);
   apiCloseDigit = clean(apiCloseDigit);
 
-  if (!DATE_RE.test(resultDate)) {
+  // Default the date so a push without resultDate still saves + lists today.
+  // Partial pushes stay partial: OPEN-only shows as "223-7" until close lands.
+  if (!DATE_RE.test(resultDate)) resultDate = todayStr();
+
+  const hasOpen = Boolean(apiOpenPana) && Boolean(apiOpenDigit);
+  const hasClose = Boolean(apiClosePana) && Boolean(apiCloseDigit);
+
+  // Nothing usable at all -> checker probe.
+  if (!hasOpen && !hasClose) {
+    return res.status(200).json({
+      ok: true,
+      ready: true,
+      saved: false,
+      message: 'Maharashtra market webhook is live. Send result fields to save.',
+    });
+  }
+
+  // Validate only the halves that were actually sent, so an OPEN-only push
+  // (before the close is drawn) still saves and shows as "223-7".
+  if (hasOpen && (!OPEN_PANA_RE.test(apiOpenPana) || !OPEN_DIGIT_RE.test(apiOpenDigit))) {
+    return res.status(200).json({
+      ok: false,
+      saved: false,
+      error: 'apiOpenPana must be 3 digits and apiOpenDigit 1-2 digits',
+    });
+  }
+  if (hasClose && (!CLOSE_PANA_RE.test(apiClosePana) || !CLOSE_DIGIT_RE.test(apiCloseDigit))) {
+    return res.status(200).json({
+      ok: false,
+      saved: false,
+      error: 'apiClosePana must be 3 digits and apiCloseDigit 1-2 digits',
+    });
   }
 
   const trimmedMarketName = marketName;
@@ -180,56 +212,93 @@ router.post('/', async (req, res) => {
     const created = await Market.create({
       name: trimmedMarketName,
       slug,
+      // Full-day window: push markets reveal by RESULT (mergeMarkets), but a
+      // sane window still sorts them into the public flow correctly.
       openTime: '00:00',
       closeTime: '23:59',
       category: 'Custom',
       note: 'Created via webhook push',
       active: true,
+      pushDriven: true,
     });
 
     market = created;
+  } else if (!market.pushDriven) {
+    // A manual market that the provider now feeds becomes push-driven, so
+    // open-only "223-7" shows immediately instead of waiting for the clock.
+    market.pushDriven = true;
+    await market.save();
   }
 
-  // --- Upsert the OPEN half ---
-  // display/jodi/ank are required on the model, so compute them up-front —
-  // an upsert that only $sets number/pana would fail validation on insert.
-  const openBuilt = buildDisplay(
-    { number: apiOpenDigit, pana: apiOpenPana },
-    { number: apiCloseDigit, pana: apiClosePana }
-  );
-  const open = await Result.findOneAndUpdate(
-    { market: market._id, date: resultDate, session: 'open' },
-    {
-      $set: {
-        number: apiOpenDigit,
-        pana: apiOpenPana,
-        ank: openBuilt.ank,
-        display: openBuilt.display,
-        jodi: openBuilt.jodi,
-        jodiComplete: openBuilt.jodiComplete,
-      },
-    },
-    { upsert: true, returnDocument: 'after', runValidators: true, setDefaultsOnInsert: true }
-  );
+  // --- Upsert ONLY the halves that were actually sent ---
+  // display/jodi/ank are required on the model, so compute them up-front.
+  // OPEN-only stays "223-7" until close lands; CLOSE-only stays "680-6".
+  let open = await Result.findOne({ market: market._id, date: resultDate, session: 'open' }).lean();
+  let close = await Result.findOne({ market: market._id, date: resultDate, session: 'close' }).lean();
 
-  // --- Upsert the CLOSE half (same computed display on both rows) ---
-  const close = await Result.findOneAndUpdate(
-    { market: market._id, date: resultDate, session: 'close' },
-    {
-      $set: {
-        number: apiCloseDigit,
-        pana: apiClosePana,
-        ank: openBuilt.ank,
-        display: openBuilt.display,
-        jodi: openBuilt.jodi,
-        jodiComplete: openBuilt.jodiComplete,
+  if (hasOpen) {
+    const built = buildDisplay(
+      { number: apiOpenDigit, pana: apiOpenPana },
+      close ? { number: close.number, pana: close.pana } : null
+    );
+    open = await Result.findOneAndUpdate(
+      { market: market._id, date: resultDate, session: 'open' },
+      {
+        $set: {
+          number: apiOpenDigit,
+          pana: apiOpenPana,
+          ank: built.ank,
+          display: built.display,
+          jodi: built.jodi,
+          jodiComplete: built.jodiComplete,
+        },
       },
-    },
-    { upsert: true, returnDocument: 'after', runValidators: true, setDefaultsOnInsert: true }
-  );
+      { upsert: true, returnDocument: 'after', runValidators: true, setDefaultsOnInsert: true }
+    );
+  }
 
-  // --- Build display + jodi ---
-  const built = openBuilt;
+  if (hasClose) {
+    const built = buildDisplay(
+      open ? { number: open.number, pana: open.pana } : null,
+      { number: apiCloseDigit, pana: apiClosePana }
+    );
+    close = await Result.findOneAndUpdate(
+      { market: market._id, date: resultDate, session: 'close' },
+      {
+        $set: {
+          number: apiCloseDigit,
+          pana: apiClosePana,
+          ank: built.ank,
+          display: built.display,
+          jodi: built.jodi,
+          jodiComplete: built.jodiComplete,
+        },
+      },
+      { upsert: true, returnDocument: 'after', runValidators: true, setDefaultsOnInsert: true }
+    );
+  }
+
+  // Refresh both halves, then rebuild BOTH rows so open + close always share
+  // the same display/jodi (open-only "223-7" -> full "223-76-680").
+  [open, close] = await Promise.all([
+    Result.findOne({ market: market._id, date: resultDate, session: 'open' }),
+    Result.findOne({ market: market._id, date: resultDate, session: 'close' }),
+  ]);
+  const built = buildDisplay(open, close);
+  if (!built.error) {
+    await Promise.all(
+      [open, close]
+        .filter(Boolean)
+        .map((row) =>
+          Result.updateOne(
+            { _id: row._id },
+            { $set: { display: built.display, jodi: built.jodi, jodiComplete: built.jodiComplete, ank: built.ank } }
+          )
+        )
+    );
+    if (open) open = await Result.findById(open._id);
+    if (close) close = await Result.findById(close._id);
+  }
 
   return res.status(200).json({
     ok: true,
@@ -237,20 +306,20 @@ router.post('/', async (req, res) => {
       market: market.name,
       marketId: market._id,
       date: resultDate,
-      open: {
+      open: open ? {
         pana: open.pana,
         number: open.number,
         display: open.display,
-      },
-      close: {
+      } : null,
+      close: close ? {
         pana: close.pana,
         number: close.number,
         display: close.display,
-      },
+      } : null,
       // Derived from apiOpenDigit + apiCloseDigit.
-      jodi: built.jodi,
-      jodiComplete: built.jodiComplete,
-      ank: built.ank,
+      jodi: built.jodi ?? null,
+      jodiComplete: built.jodiComplete ?? false,
+      ank: built.ank ?? null,
     },
   });
   } catch (err) {
