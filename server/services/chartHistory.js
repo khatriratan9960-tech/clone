@@ -212,6 +212,7 @@ export async function getChartHistory(slug, weeks = 24) {
     /* non-critical */
   }
   const custom = new Map();
+  let customDays = 0;
   if (marketDoc) {
     try {
       const results = await Result.find({
@@ -221,16 +222,30 @@ export async function getChartHistory(slug, weeks = 24) {
       })
         .sort({ date: 1 })
         .lean();
+      // Group the two session rows (open + close) per date. The old code
+      // used one row's pana for BOTH open and close, so every webhook
+      // market showed e.g. open=680 close=680 instead of 223 / 680.
+      const halvesByDate = new Map();
       for (const r of results) {
-        if (!custom.has(r.date)) {
-          custom.set(r.date, {
-            open: r.pana,
-            close: r.pana,
-            jodi: r.jodi,
-            openAnk: ankOf(r.pana),
-            closeAnk: ankOf(r.pana),
-          });
+        let entry = halvesByDate.get(r.date);
+        if (!entry) {
+          entry = { open: null, close: null };
+          halvesByDate.set(r.date, entry);
         }
+        if (r.session === 'close') entry.close = r;
+        else entry.open = r;
+      }
+      for (const [date, halves] of halvesByDate) {
+        const jodi = halves.open?.jodi ?? halves.close?.jodi ?? null;
+        if (!halves.open?.pana || !halves.close?.pana || !jodi) continue;
+        custom.set(date, {
+          open: halves.open.pana,
+          close: halves.close.pana,
+          jodi,
+          openAnk: ankOf(halves.open.pana),
+          closeAnk: ankOf(halves.close.pana),
+        });
+        customDays++;
       }
     } catch {
       /* non-critical */
@@ -240,30 +255,40 @@ export async function getChartHistory(slug, weeks = 24) {
   const weeksArr = [];
   let latest = null;
   let storedDays = 0;
+  // Latest real day, regardless of source — feeds the "latest" gold box on
+  // the chart page. Provider entries and webhook (custom) days compete.
+  const noteLatest = (open, close, jodi, date) => {
+    if (!open || !close || !jodi) return;
+    if (!latest || date > latest.date) latest = { open, close, jodi, date };
+  };
   let cursor = weekStart;
   for (let w = 0; w < weeks; w++) {
     const days = [];
     for (let i = 0; i < 7; i++) {
       const date = addDays(cursor, i);
       const entry = byDate.get(date);
-      days.push(makeDay(entry, custom.get(date), date));
+      const cday = custom.get(date);
+      days.push(makeDay(entry, cday, date));
       if (entry) {
         storedDays++;
-        if (!latest || date > latest.date) {
-          latest = { open: entry.openPana, close: entry.closePana, jodi: entry.jodi, date };
-        }
+        noteLatest(entry.openPana, entry.closePana, entry.jodi, date);
+      } else if (cday) {
+        storedDays++;
+        noteLatest(cday.open, cday.close, cday.jodi, date);
       }
     }
     weeksArr.push({ label: formatShort(cursor) + ' to ' + formatShort(addDays(cursor, 6)), days });
     cursor = addDays(cursor, 7);
   }
 
+  const totalDays = storedDays + customDays;
+
   return {
     market: marketName(slugSlug, marketDoc, entries),
     weeks: weeksArr,
     latest,
-    storedDays,
-    source: storedDays > 0 ? 'matka' : 'empty',
+    storedDays: totalDays,
+    source: storedDays > 0 ? 'matka' : customDays > 0 ? 'custom' : 'empty',
   };
 }
 
