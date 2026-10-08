@@ -4,9 +4,8 @@ import { fetchProviderMarkets, fetchProviderLive } from './provider.js';
 import { syncChartHistory, syncChartHistoryFromCards } from './chartHistory.js';
 import { mergeMarkets } from './mergeMarkets.js';
 import { rankLiveCards, BOARD_SIZE } from './liveBoard.js';
-import { toMinutes, to12Hour, nowMinutes, windowStatus, isImminent } from './marketClock.js';
+import { toMinutes, to12Hour, nowMinutes } from './marketClock.js';
 import { buildDisplay } from '../models/Result.js';
-import { revealCustom } from './customReveal.js';
 
 /** Today's date in YYYY-MM-DD using the server's local timezone. */
 export function today() {
@@ -76,15 +75,9 @@ export async function getPublicMarkets(now = nowMinutes()) {
 /**
  * Live-result cards.
  *
- * The board is time-driven, not declaration-driven: a market appears
- * because its draw window says it should. A custom market therefore shows
- * up on its own schedule, and its declared result (when the operator has
- * published one for today) is what fills the card in.
- *
- * The CLOCK gates the reveal (see customReveal.js): a result declared at
- * 09:00 for a market that opens at 09:15 shows nothing until 09:15, the
- * open half alone shows while the window is open, and the full result
- * appears once the close time passes.
+ * ALL custom markets (manual + webhook) are RESULT-driven, exactly like the
+ * merged listing: open-only "223-7" shows the moment it is saved, the full
+ * "223-76-680" the moment close is saved. No clock gate anywhere.
  */
 export async function getPublicLive(date = today(), now = nowMinutes()) {
   const [providerLive, { markets }] = await Promise.all([
@@ -120,48 +113,18 @@ export async function getPublicLive(date = today(), now = nowMinutes()) {
       const openMin = toMinutes(m.openTime);
       const closeMin = toMinutes(m.closeTime);
 
-      // Nothing to say about a market we cannot schedule.
-      if (windowStatus(openMin, closeMin, now) === 'unknown' && !m.pushDriven) return null;
-
+      // Same for manual + webhook: result-driven, never clock-gated.
       const halves = byMarket.get(String(m._id)) ?? { open: null, close: null };
-
-      // Push-driven (webhook) markets are RESULT-driven: open-only "223-7"
-      // shows the moment it lands, full "223-76-680" when close lands.
-      if (m.pushDriven) {
-        const disp = halves.open || halves.close ? buildDisplay(halves.open, halves.close) : null;
-        const ok = disp && !disp.error ? disp : null;
-        return {
-          market: m.name,
-          slug: m.slug,
-          result: ok?.display ?? null,
-          ank: ok?.ank ?? null,
-          isPending: !ok,
-          status: ok ? (ok.jodiComplete ? 'closed' : 'live') : 'pending',
-          isImminent: false,
-          openTime: to12Hour(openMin),
-          closeTime: to12Hour(closeMin),
-          _open: openMin,
-          _close: closeMin,
-        };
-      }
-
-      const { status, result, ank, isPending } = revealCustom(
-        m,
-        halves.open,
-        halves.close,
-        now
-      );
-
+      const disp = halves.open || halves.close ? buildDisplay(halves.open, halves.close) : null;
+      const ok = disp && !disp.error ? disp : null;
       return {
         market: m.name,
         slug: m.slug,
-        result,
-        ank,
-        isPending,
-        status,
-        // Same imminent promotion the provider cards get, so a custom market
-        // about to declare shows up on the board instead of being cut.
-        isImminent: status === 'upcoming' && isImminent(openMin, closeMin, now),
+        result: ok?.display ?? null,
+        ank: ok?.ank ?? null,
+        isPending: !ok,
+        status: ok ? (ok.jodiComplete ? 'closed' : 'live') : 'pending',
+        isImminent: false,
         openTime: to12Hour(openMin),
         closeTime: to12Hour(closeMin),
         _open: openMin,

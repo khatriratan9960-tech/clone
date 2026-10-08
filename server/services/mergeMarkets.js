@@ -9,7 +9,6 @@
 
 import { toMinutes, to12Hour, nowMinutes, publicStatus } from './marketClock.js';
 import { buildDisplay } from '../models/Result.js';
-import { revealCustom } from './customReveal.js';
 
 // Re-exported so existing callers keep working from this module.
 export { toMinutes, to12Hour };
@@ -67,25 +66,21 @@ function normalizeProvider(raw, now) {
 /**
  * Shape one of the operator's markets + its declared halves.
  *
- * MANUALLY-declared markets stay CLOCK-GATED (customReveal.js): whatever the
- * operator declares early stays hidden until the window reaches it, so the
- * public page can never show a result before its scheduled time.
- *
- * PUSH-driven markets (Maharashtra webhook) are RESULT-driven instead: the
- * provider pushes halves live, so OPEN-only shows "223-7" immediately and the
- * full "223-76-680" the moment close lands — no clock gate.
+ * ALL custom markets (manual + webhook) are RESULT-driven: the stored halves
+ * decide what shows, not the clock.
+ *   - open only   -> "223-7" the moment the open half is saved
+ *   - both halves -> "223-76-680" the moment the close half is saved
+ *   - nothing yet -> pending (Loading...)
  */
 function normalizeCustom(market, halves, now) {
   const openM = toMinutes(market.openTime);
   const closeM = toMinutes(market.closeTime);
 
-  // Push-driven (webhook) markets: RESULT-driven, no clock gate.
-  //  - open only  -> "223-7" the moment the open push lands
-  //  - both halves -> "223-76-680" the moment the close push lands
-  // Manual markets keep the clock gate via revealCustom().
-  if (market.pushDriven) {
-    const built = halves?.open || halves?.close ? buildDisplay(halves?.open ?? null, halves?.close ?? null) : null;
-    const ok = built && !built.error ? built : null;
+  // Same for manual + webhook markets: show whatever halves are stored.
+  const built = halves?.open || halves?.close ? buildDisplay(halves?.open ?? null, halves?.close ?? null) : null;
+  const ok = built && !built.error ? built : null;
+  // Latest open row, so the listing can publish its pana even before close.
+  const openRow = halves?.open ?? halves?.close ?? null;
     return {
       market: market.name,
       slug: market.slug,
@@ -104,33 +99,6 @@ function normalizeCustom(market, halves, now) {
       jodiUrl: `/jodi-chart-record/${market.slug}.php`,
       panelUrl: `/panel-chart-record/${market.slug}.php`,
     };
-  }
-
-  const { status, result, ank, jodi, openRow } = revealCustom(
-    market,
-    halves?.open ?? null,
-    halves?.close ?? null,
-    now
-  );
-
-  return {
-    market: market.name,
-    slug: market.slug,
-    open: openRow?.pana ?? null,
-    close: null,
-    jodi: jodi ?? null,
-    result,
-    openTime: to12Hour(openM),
-    closeTime: to12Hour(closeM),
-    ank: ank ?? null,
-    status,
-    source: 'custom',
-    // Internal only - stripped before the API responds.
-    _sort: closeM,
-    _marketId: String(market._id),
-    jodiUrl: `/jodi-chart-record/${market.slug}.php`,
-    panelUrl: `/panel-chart-record/${market.slug}.php`,
-  };
 }
 
 /**
