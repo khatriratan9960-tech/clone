@@ -330,6 +330,51 @@ check(
 }
 
 
+// --- 17. Reference schedule: provider/webhook markets show the original
+// site's times; manual custom markets keep their own. ---
+const schedMod = await import('./server/services/marketSchedule.js');
+const { lookupSchedule: schedLookup } = schedMod;
+check(
+  'KALYAN MORNING -> 11:40 AM / 12:40 PM',
+  schedLookup('KALYAN MORNING')?.open === '11:40 AM' && schedLookup('KALYAN MORNING')?.close === '12:40 PM',
+  JSON.stringify(schedLookup('KALYAN MORNING'))
+);
+check(
+  'MAIN BAZAR -> 10:00 PM / 12:10 AM (midnight wrap)',
+  schedLookup('MAIN BAZAR')?.open === '10:00 PM' && schedLookup('MAIN BAZAR')?.close === '12:10 AM',
+  JSON.stringify(schedLookup('MAIN BAZAR'))
+);
+check(
+  'case-insensitive: kalyan night',
+  schedLookup('kalyan night')?.open === '09:45 PM' && schedLookup('kalyan night')?.close === '11:45 PM',
+  JSON.stringify(schedLookup('kalyan night'))
+);
+check(
+  'PUNA NIGHT [ main ] bracket form resolves',
+  schedLookup('PUNA NIGHT [ main ]')?.open === '11:00 PM',
+  JSON.stringify(schedLookup('PUNA NIGHT [ main ]'))
+);
+check(
+  'unknown market -> null (manual markets untouched)',
+  schedLookup('SOME NEW CUSTOM') === null
+);
+// (provider card checks run in the block below)
+{
+  const { mergeMarkets: mm } = await import('./server/services/mergeMarkets.js');
+  const rows = mm([{ market: 'KALYAN MORNING', open: '489', close: '16', jodi: '457' }], [], { now: 12 * 60 });
+  check(
+    'provider KALYAN MORNING card shows 11:40 AM / 12:40 PM',
+    rows[0]?.openTime === '11:40 AM' && rows[0]?.closeTime === '12:40 PM',
+    `${rows[0]?.openTime} / ${rows[0]?.closeTime}`
+  );
+  const rows2 = mm([{ market: 'SOME NEW CUSTOM', open: '111', close: '22', jodi: '333' }], [], { now: 12 * 60 });
+  check(
+    'unlisted market keeps blank times (no invented window)',
+    rows2[0]?.openTime === '' && rows2[0]?.closeTime === '',
+    `${rows2[0]?.openTime} / ${rows2[0]?.closeTime}`
+  );
+}
+
 const failed = results.filter(([, ok]) => !ok);
 console.log(`\n${results.length - failed.length}/${results.length} passed`);
 process.exit(failed.length ? 1 : 0);

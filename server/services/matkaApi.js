@@ -1,4 +1,5 @@
 import { config } from '../config.js';
+import { lookupSchedule } from './marketSchedule.js';
 
 /**
  * Matka trial API (matkaapi.com) - stateless, no IP check, history must be
@@ -106,8 +107,8 @@ function normalizeRow(raw, { date, includeResult } = {}) {
     open: undefined,
     close: undefined,
     jodi: undefined,
-    openTime: openTime != null ? to12HourLocal(openTime) : '',
-    closeTime: closeTime != null ? to12HourLocal(closeTime) : '',
+    openTime: openTime != null ? to12HourLocal(openTime) : (lookupSchedule(name)?.open ?? ''),
+    closeTime: closeTime != null ? to12HourLocal(closeTime) : (lookupSchedule(name)?.close ?? ''),
     date: date ?? todayStr(),
     result: undefined,
     display: undefined,

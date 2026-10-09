@@ -7,6 +7,7 @@ import { rankLiveCards, BOARD_SIZE } from './liveBoard.js';
 import { revealCustom } from './customReveal.js';
 import { toMinutes, to12Hour, nowMinutes, isImminent } from './marketClock.js';
 import { buildDisplay } from '../models/Result.js';
+import { lookupSchedule } from './marketSchedule.js';
 
 /** Today's date in YYYY-MM-DD using the server's local timezone. */
 export function today() {
@@ -150,8 +151,9 @@ export async function getPublicLive(date = today(), now = nowMinutes()) {
   // Push/webhook markets: the provider pushed the draw, so the stored halves
   // are the source of truth and the result shows as soon as it is saved.
   for (const m of pushMarkets) {
-    const openMin = toMinutes(m.openTime);
-    const closeMin = toMinutes(m.closeTime);
+    const sched = (m.openTime === '00:00' && m.closeTime === '23:59') ? lookupSchedule(m.name) : null;
+    const openMin = toMinutes(sched?.open ?? m.openTime);
+    const closeMin = toMinutes(sched?.close ?? m.closeTime);
 
     const halves = byMarket.get(String(m._id)) ?? { open: null, close: null };
     const disp = halves.open || halves.close ? buildDisplay(halves.open, halves.close) : null;

@@ -10,6 +10,7 @@
 import { toMinutes, to12Hour, nowMinutes, publicStatus } from './marketClock.js';
 import { buildDisplay } from '../models/Result.js';
 import { revealCustom } from './customReveal.js';
+import { lookupSchedule } from './marketSchedule.js';
 
 // Re-exported so existing callers keep working from this module.
 export { toMinutes, to12Hour };
@@ -37,6 +38,9 @@ function normalizeProvider(raw, now) {
   else if (hasPair) display = `${open}-${close}`;
   else if (jodi != null && jodi !== '') display = String(jodi);
 
+  const sched = lookupSchedule(name);
+  const openTimeShown = raw.openTime ?? sched?.open ?? '';
+  const closeTimeShown = raw.closeTime ?? sched?.close ?? '';
   const slug = raw.slug ?? String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
   return {
@@ -46,21 +50,21 @@ function normalizeProvider(raw, now) {
     close,
     jodi: hasAll ? jodi : null,
     result: display,
-    openTime: raw.openTime ?? '',
-    closeTime: raw.closeTime ?? '',
+    openTime: openTimeShown,
+    closeTime: closeTimeShown,
     ank: raw.ank ?? ankOf(display),
     // Clock-driven, not result-driven: a market inside its draw window is
     // "live" even before anything has been published for it.
     status: publicStatus(
-      toMinutes(raw.openTime ?? raw.open_time),
-      toMinutes(raw.closeTime ?? raw.close_time),
+      toMinutes(raw.openTime ?? raw.open_time ?? sched?.open),
+      toMinutes(raw.closeTime ?? raw.close_time ?? sched?.close),
       now,
       display !== null
     ),
     source: 'provider',
     jodiUrl: `/jodi-chart-record/${slug}.php`,
     panelUrl: `/panel-chart-record/${slug}.php`,
-    _sort: toMinutes(raw.closeTime ?? raw.close_time),
+    _sort: toMinutes(raw.closeTime ?? raw.close_time ?? sched?.close),
   };
 }
 
@@ -88,6 +92,9 @@ function normalizeCustom(market, halves, now) {
   // operator declared early must not appear until the market's open/close
   // window opens.
   if (market.pushDriven) {
+    const sched2 = (market.openTime === '00:00' && market.closeTime === '23:59') ? lookupSchedule(market.name) : null;
+    const openM2 = toMinutes(sched2?.open ?? market.openTime);
+    const closeM2 = toMinutes(sched2?.close ?? market.closeTime);
     const built = halves?.open || halves?.close ? buildDisplay(halves?.open ?? null, halves?.close ?? null) : null;
     const ok = built && !built.error ? built : null;
     return {
@@ -97,13 +104,13 @@ function normalizeCustom(market, halves, now) {
       close: halves?.close?.pana ?? null,
       jodi: ok?.jodi ?? null,
       result: ok?.display ?? null,
-      openTime: to12Hour(openM),
-      closeTime: to12Hour(closeM),
+      openTime: to12Hour(openM2 ?? openM),
+      closeTime: to12Hour(closeM2 ?? closeM),
       ank: ok?.ank ?? null,
       status: ok ? (ok.jodiComplete ? 'closed' : 'live') : 'pending',
       source: 'custom',
       // Internal only - stripped before the API responds.
-      _sort: closeM,
+      _sort: closeM2 ?? closeM,
       _marketId: String(market._id),
       jodiUrl: `/jodi-chart-record/${market.slug}.php`,
       panelUrl: `/panel-chart-record/${market.slug}.php`,

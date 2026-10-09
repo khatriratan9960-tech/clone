@@ -19,6 +19,7 @@
  */
 
 import { toMinutes, to12Hour, nowMinutes, windowStatus, isImminent } from './marketClock.js';
+import { lookupSchedule } from './marketSchedule.js';
 
 /** Keep the board the same size as the original site's card list. */
 const BOARD_SIZE = 14;
@@ -90,8 +91,9 @@ function revealFor(raw, status) {
 
 /** Turn one market row into a live-board card. */
 export function toLiveCard(raw, now = nowMinutes()) {
-  const openMin = toMinutes(raw.openTime ?? raw.open_time);
-  const closeMin = toMinutes(raw.closeTime ?? raw.close_time);
+  const sched = lookupSchedule(raw.market ?? raw.name);
+  const openMin = toMinutes(raw.openTime ?? raw.open_time ?? sched?.open);
+  const closeMin = toMinutes(raw.closeTime ?? raw.close_time ?? sched?.close);
   const status = windowStatus(openMin, closeMin, now);
 
   const { result, ank } = revealFor(raw, status);

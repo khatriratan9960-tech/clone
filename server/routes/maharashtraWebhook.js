@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { Market } from '../models/Market.js';
 import { Result, buildDisplay } from '../models/Result.js';
 import { todayStr } from '../services/marketClock.js';
+import { lookupSchedule, to24h } from '../services/marketSchedule.js';
 
 const router = Router();
 
@@ -214,8 +215,8 @@ router.post('/', async (req, res) => {
       slug,
       // Full-day window: push markets reveal by RESULT (mergeMarkets), but a
       // sane window still sorts them into the public flow correctly.
-      openTime: '00:00',
-      closeTime: '23:59',
+      openTime: to24h(lookupSchedule(trimmedMarketName)?.open) ?? '00:00',
+      closeTime: to24h(lookupSchedule(trimmedMarketName)?.close) ?? '23:59',
       category: 'Custom',
       note: 'Created via webhook push',
       active: true,
