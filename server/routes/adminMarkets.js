@@ -57,6 +57,7 @@ router.get('/markets', async (req, res) => {
       active: m.active,
       category: m.category,
       note: m.note,
+      offDays: m.offDays,
       // Lets a super admin see who owns what.
       owner: m.createdBy ? String(m.createdBy) : null,
       createdAt: m.createdAt,
@@ -93,6 +94,7 @@ router.post('/markets', async (req, res) => {
       category: category?.trim() || 'Custom',
       note: note?.trim() || '',
       active: active !== false,
+      offDays: Array.isArray(offDays) ? offDays.map((n) => Number(n)) : [0, 6],
       createdBy: req.user._id,
     });
 
@@ -107,6 +109,7 @@ router.post('/markets', async (req, res) => {
         openTimeLabel: to12Hour(market.openTime),
         closeTimeLabel: to12Hour(market.closeTime),
         active: market.active,
+        offDays: market.offDays,
       },
     });
   } catch (e) {
@@ -136,7 +139,7 @@ router.put('/markets/:id', async (req, res) => {
     return res.status(403).json({ ok: false, error: 'You can only edit markets you created' });
   }
 
-  const { name, openTime, closeTime, category, note, active } = req.body ?? {};
+  const { name, openTime, closeTime, category, note, active, offDays } = req.body ?? {};
 
   if (name !== undefined) {
     const trimmed = String(name).trim();
@@ -172,6 +175,27 @@ router.put('/markets/:id', async (req, res) => {
   if (note !== undefined) market.note = String(note).trim();
   if (active !== undefined) market.active = Boolean(active);
 
+  // Off-days: 0 = Sunday, 1 = Monday, ... 6 = Saturday. Default [0, 6] closes
+  // Sun + Sat. Values outside 0..6 are ignored but logged.
+  if (offDays !== undefined) {
+    const parsed = Array.isArray(offDays)
+      ? offDays
+          .map((n) => Number(n))
+          .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
+      : [];
+    if (parsed.length !== offDays.length) {
+      // Drop any non-integer / out-of-range entries silently.
+      const accepted = new Set(parsed);
+      const filtered = offDays.filter((n) => {
+        const num = Number(n);
+        return Number.isInteger(num) && num >= 0 && num <= 6;
+      });
+      market.offDays = filtered.map((n) => Number(n));
+    } else {
+      market.offDays = parsed;
+    }
+  }
+
   await market.save();
 
   res.json({
@@ -185,6 +209,7 @@ router.put('/markets/:id', async (req, res) => {
       openTimeLabel: to12Hour(market.openTime),
       closeTimeLabel: to12Hour(market.closeTime),
       active: market.active,
+      offDays: market.offDays,
     },
   });
 });

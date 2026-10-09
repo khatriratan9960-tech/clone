@@ -28,6 +28,12 @@ function pad2(n) {
   return String(n).padStart(2, '0');
 }
 
+/** Day-of-week index for a YYYY-MM-DD date (0=Sun..6=Sat). */
+function dayOfWeek(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d).getDay();
+}
+
 /** "2026-10-08" -> "08/10/2026" (chart week labels). */
 function formatShort(dateStr) {
   const m = String(dateStr ?? '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -63,9 +69,16 @@ function ankOf(pana) {
 
 /** One chart day: real stored data OR a marked-missing placeholder
  *  (mirrors the fakeChart week-cell shape so ChartPage.jsx never has to
- *  know where the data came from). */
-function makeDay(entry, custom, date) {
+ *  know where the data came from).
+ *
+ * offDaySlots: Set of day-of-week indices (0=Sun..6=Sat) that this market is
+ * closed on. A day that is BOTH an off-day AND has no stored entry is marked
+ * missing (renders **) instead of trying to show stale data from another day.
+function makeDay(entry, custom, date, offDaySlots) {
   const isFuture = date > today();
+  const dow = dayOfWeek(date);
+  const isOff = offDaySlots?.has(dow);
+
   if (entry) {
     return {
       open: entry.openPana,
@@ -75,6 +88,7 @@ function makeDay(entry, custom, date) {
       closeAnk: ankOf(entry.closePana),
       missing: false,
       isFuture,
+      offDay: isOff,
     };
   }
   if (custom) {
@@ -86,7 +100,14 @@ function makeDay(entry, custom, date) {
       closeAnk: custom.closeAnk,
       missing: false,
       isFuture: false,
+      offDay: isOff,
     };
+  }
+  // No stored data and no custom half. If the day is an off-day (or empty),
+  // show missing so the chart renders **. Future off-days show as empty
+  // (matching the existing "day not yet started" behaviour).
+  if (isOff || !isFuture) {
+    return { missing: true, isFuture, offDay: isOff };
   }
   return { missing: true, isFuture };
 }
@@ -102,6 +123,17 @@ function entryToDay(entry) {
     missing: false,
     isFuture: false,
   };
+}
+
+/** Map a market slug -> set of closed day-of-week indices (0=Sun..6=Sat). */
+async function getMarketOffDays(slugSlug) {
+  try {
+    const marketDoc = await Market.findOne({ slug: slugSlug }).lean();
+    if (!marketDoc) return null;
+    return marketDoc.offDaySet();
+  } catch {
+    return null;
+  }
 }
 
 function marketName(slug, marketDoc, entries) {
@@ -213,6 +245,9 @@ export async function getChartHistory(slug, weeks = 24) {
   }
   const custom = new Map();
   let customDays = 0;
+  // Market off-days (0=Sun..6=Sat). Chart cells that fall on an off-day and
+  // have no stored entry render ** instead of blank.
+  const offDaySlots = marketDoc ? await getMarketOffDays(slugSlug) : null;
   if (marketDoc) {
     try {
       const results = await Result.find({
@@ -268,7 +303,7 @@ export async function getChartHistory(slug, weeks = 24) {
       const date = addDays(cursor, i);
       const entry = byDate.get(date);
       const cday = custom.get(date);
-      days.push(makeDay(entry, cday, date));
+      days.push(makeDay(entry, cday, date, offDaySlots));
       if (entry) {
         storedDays++;
         noteLatest(entry.openPana, entry.closePana, entry.jodi, date);
@@ -289,6 +324,7 @@ export async function getChartHistory(slug, weeks = 24) {
     latest,
     storedDays: totalDays,
     source: storedDays > 0 ? 'matka' : customDays > 0 ? 'custom' : 'empty',
+    offDays: marketDoc ? marketDoc.offDays : null,
   };
 }
 

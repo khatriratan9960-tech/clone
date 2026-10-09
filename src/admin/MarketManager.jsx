@@ -2,7 +2,19 @@ import { useEffect, useState } from 'react';
 import { useApiClient } from './AuthContext.jsx';
 import TimePicker from './TimePicker.jsx';
 
-const BLANK = { name: '', openTime: '', closeTime: '', category: 'Custom', note: '' };
+/** Day-of-week labels — 0 = Sun ... 6 = Sat */
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+/** Default closed days: Sunday + Saturday (traditional matka schedule). */
+const DEFAULT_OFF_DAYS = [0, 6];
+
+const BLANK = {
+  name: '',
+  openTime: '',
+  closeTime: '',
+  category: 'Custom',
+  note: '',
+  offDays: [...DEFAULT_OFF_DAYS],
+};
 
 export default function MarketManager({ markets, onChanged }) {
   const api = useApiClient();
@@ -105,15 +117,29 @@ export default function MarketManager({ markets, onChanged }) {
             />
           </div>
 
-          <label className="adm-label">
-            Note (optional)
-            <input
-              className="adm-input"
-              value={form.note}
-              onChange={set('note')}
-              maxLength={500}
-            />
-          </label>
+          <div className="adm-row" style={{ marginTop: 12 }}>
+            <span className="adm-label">Closed days</span>
+            <span className="adm-hint">Off-day markets show ** in charts and never auto-append results.</span>
+            <div className="adm-row-inline" style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+              {DAY_LABELS.map((d) => (
+                <label key={d} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--text)' }}>
+                  <input
+                    type="checkbox"
+                    checked={form.offDays.includes(DAY_LABELS.indexOf(d))}
+                    onChange={(e) => {
+                      setForm((f) => {
+                        const next = f.offDays.includes(DAY_LABELS.indexOf(d))
+                          ? f.offDays.filter((x) => x !== DAY_LABELS.indexOf(d))
+                          : [...f.offDays, DAY_LABELS.indexOf(d)];
+                        return { ...f, offDays: next.sort() };
+                      });
+                    }}
+                  />
+                  {d}
+                </label>
+              ))}
+            </div>
+          </div>
 
           <button className="adm-btn adm-btn-primary" type="submit" disabled={busy} style={{ maxWidth: 200 }}>
             {busy ? 'Creating...' : 'Create market'}
@@ -150,6 +176,11 @@ export default function MarketManager({ markets, onChanged }) {
                   <td>
                     <span className={`adm-badge ${m.active ? 'adm-badge-on' : 'adm-badge-off'}`}>
                       {m.active ? 'Live' : 'Hidden'}
+                      {m.offDays?.length > 0 && (
+                        <span className="adm-badge adm-badge-off" style={{ marginLeft: 6 }} title="Closed days (0=Sun..6=Sat)">
+                          OFF:{m.offDays.map((d) => DAY_LABELS[d]).join('/')}
+                        </span>
+                      )}
                     </span>
                   </td>
                   <td>
