@@ -83,14 +83,20 @@
 }
 
 /* --- Chart table --- */
+/* Keep the data table a centered block (not full-page width) so the peach
+   page background shows on both sides, matching the reference layout. */
 .chp-table-wrap {
   overflow-x: auto;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 10px;
 }
 .chp-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
   margin: 0 auto;
+  box-shadow: 0 0 20px 0 rgb(0 0 0 / 40%);
 }
 .chp-table .chp-cap {
   background: #31489b;
