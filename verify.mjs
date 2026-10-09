@@ -107,7 +107,7 @@ const finalAnkBr = (finalAnkHtml.match(/<br\s*\/?>/g) || []).length;
 const pendingLive = api.data.liveResults.filter((r) => r.isPending).length;
 
 const checks = [
-  ['m-icon (header)', out.includes('m-icon')],
+  ['header welcome bar', out.includes('Welcome to Live Matka international')],
   ['text2 (hero)', out.includes('text2')],
   ['f-pti (lucky number)', out.includes('f-pti')],
   ['liv-rslt (live results)', out.includes('liv-rslt')],
@@ -132,7 +132,7 @@ const checks = [
     pendingLive === 0 || out.includes('Loading...'),
   ],
   ['kalyan 257-48-369 present', out.includes('257-48-369')],
-  ['header banner image', out.includes('/img/live-matka-banner.png')],
+  ['brand logo banner removed from header', !out.includes('/img/live-matka-banner.png')],
   ['header laxmi image', out.includes('/img/live-matka-laxmi.jpg')],
   [
     `all markets have open+close times (${withTimes}/168)`,

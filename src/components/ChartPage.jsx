@@ -184,12 +184,6 @@ export default function ChartPage() {
 
   return (
     <>
-      <div className="m-icon">
-        <a href="/" style={{ color: '#fff' }}>
-          <img src="/img/live-matka-banner.png" alt="Image of live.matka" height="57" width="292" />
-        </a>
-      </div>
-
       <div className="chp-title">
         {upper} {type === 'panel' ? 'PANEL' : 'JODI'} CHART
       </div>

@@ -313,7 +313,7 @@ src/
   lib/chartLinks.js     bottom "SATTA MATKA JODI CHART" / "MATKA PANEL CHART" links
   styles/live-matka.css original stylesheet, extracted verbatim (511 lines)
   styles/chart.css      chart-page-only styles (title bar, panel cross cell)
-public/img/             live-matka-banner.png, live-matka-laxmi.jpg (extracted from the original)
+public/img/             live-matka-laxmi.jpg (extracted from the original)
 public/                  favicon.ico + apple-touch-icon-57/60/72/76/114/120/180.png
 verify.mjs              headless render assertions
 verify-chart.mjs        renders a chart page and asserts every Jodi matches

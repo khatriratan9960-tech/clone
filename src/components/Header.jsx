@@ -1,23 +1,14 @@
 /**
  * Brand header.
  *
- * Both images are the originals, extracted from the saved original-homepage.html
- * into public/img/ (no more inline base64 blobs):
- *   live-matka-banner.png - 292x57 "Image of live.matka"
+ * The old brand logo banner (m-icon) was removed - its artwork carried the
+ * old brand name. The remaining image was extracted from the saved
+ * original-homepage.html into public/img/ (no more inline base64 blobs):
  *   live-matka-laxmi.jpg  - 90x68  "Live Matka LAXMI_PICTURE"
  */
 export default function Header() {
   return (
     <>
-      <div className="m-icon">
-        <img
-          src="/img/live-matka-banner.png"
-          alt="Image of live.matka"
-          height="57"
-          width="292"
-        />
-      </div>
-
       <div
         style={{
           marginBottom: '1px',
