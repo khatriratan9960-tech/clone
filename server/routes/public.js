@@ -97,7 +97,9 @@ router.get('/chart.php', async (req, res) => {
   if (typeof slug !== 'string' || !slug.trim()) {
     return res.status(400).json({ ok: false, error: 'slug is required' });
   }
-  const weeksN = Math.min(Math.max(Number(weeks) || 24, 1), 100);
+  // Cap raised to ~10 years so imported history (as far back as 2020) is
+  // fully reachable. ChartPage requests enough weeks to cover the data.
+  const weeksN = Math.min(Math.max(Number(weeks) || 24, 1), 520);
   const history = await getChartHistory(slug.trim(), weeksN);
   res.json({ ok: true, provider: providerName(), data: history });
 });

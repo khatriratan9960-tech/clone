@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import '../styles/chart.css';
 import { useApi } from '../hooks/useApi.js';
 import { api } from '../api/client.js';
-import { fakeChart, chartCopy, hitDigits } from '../lib/fakeChart.js';
+import { chartCopy, hitDigits } from '../lib/fakeChart.js';
 import { JODI_CHART_LINKS, PANEL_CHART_LINKS, chartUrl } from '../lib/chartLinks.js';
 
 const DAYS = ['Mo', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -157,12 +157,18 @@ function LinkZone({ title, links, type, current }) {
 export default function ChartPage() {
   const { slug, type } = slugFromPath();
   const [markets, setMarkets] = useState([]);
-  const { data, loading } = useApi(() => api.chart(slug), [slug]);
+  // Request enough weeks to cover the full imported history (back to 2020):
+  // ~6.2 years = 320 weeks. The server clamps to its own max.
+  const { data } = useApi(() => api.chart(slug, 320), [slug]);
+  // ONLY ever show real stored history. The chart API always returns a weeks
+  // array (empty days render **), so we never fabricate numbers. A market with
+  // no stored draws simply shows an all-empty chart instead of fake data.
   const stored = data?.data;
-  const useReal = Boolean(stored?.storedDays);
-  const chart = useReal
-    ? { market: stored.market, weeks: stored.weeks, latest: stored.latest }
-    : fakeChart(slug, 24);
+  const chart = {
+    market: stored?.market || slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+    weeks: stored?.weeks || [],
+    latest: stored?.latest || null,
+  };
 
   // Pull the full market list once so the "all markets" link zone is always
   // populated, no matter where the chart data comes from.

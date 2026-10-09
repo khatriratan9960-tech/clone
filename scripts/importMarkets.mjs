@@ -38,6 +38,31 @@ function clean2(v) {
   if (!/^\d{2}$/.test(s)) return null;
   return s;
 }
+/** Digit rank for matka panna ordering: 1..9 then 0 last. */
+const digitRank = (d) => (Number(d) === 0 ? 10 : Number(d));
+/** Pannas are always written ascending in the 1..9,0 sequence. */
+function sortPanna(panna) {
+  return String(panna).split('').sort((a, b) => digitRank(a) - digitRank(b)).join('');
+}
+/** Open Ank = last digit of the sum of a panna's three digits. */
+function ankOf(panna) {
+  return String(panna).split('').reduce((a, ch) => a + Number(ch), 0) % 10;
+}
+/**
+ * Normalize a draw to matka canon. The jodi is ALWAYS derived from the two
+ * panna anks (it is never an independent value in matka), and both pannas are
+ * written ascending. The source JSON has a handful of rows whose stored jodi
+ * disagrees with its own pannas or whose pannas are out of order; we correct
+ * the representation so the stored chart is internally consistent with what the
+ * chart UI renders. This is not inventing data - the drawn digits are the
+ * source's own; we only fix their canonical form.
+ */
+function normalizeDraw(open, jodi, close) {
+  const o = sortPanna(open);
+  const c = sortPanna(close);
+  const derivedJodi = String(ankOf(o)) + String(ankOf(c));
+  return { openPana: o, jodi: derivedJodi, closePana: c };
+}
 function loadDraws(cfg) {
   const fp = path.join(JSON_DIR, cfg.file);
   if (!fs.existsSync(fp)) throw new Error('Missing file: ' + fp);
@@ -77,7 +102,8 @@ function loadDraws(cfg) {
       const d = new Date(start);
       d.setDate(d.getDate() + i);
       if (!open || !jodi || !close) { holidays++; continue; }
-      draws.push({ slug: cfg.slug, market: cfg.name, date: ymd(d), openPana: open, jodi: jodi, closePana: close, display: open + '-' + jodi + '-' + close, source: 'matka' });
+      const norm = normalizeDraw(open, jodi, close);
+      draws.push({ slug: cfg.slug, market: cfg.name, date: ymd(d), openPana: norm.openPana, jodi: norm.jodi, closePana: norm.closePana, display: norm.openPana + '-' + norm.jodi + '-' + norm.closePana, source: 'matka' });
     }
   }
   return { draws: draws, holidays: holidays, weeks: weeks.length };

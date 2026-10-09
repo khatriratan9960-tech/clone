@@ -74,6 +74,7 @@ function ankOf(pana) {
  * offDaySlots: Set of day-of-week indices (0=Sun..6=Sat) that this market is
  * closed on. A day that is BOTH an off-day AND has no stored entry is marked
  * missing (renders **) instead of trying to show stale data from another day.
+ */
 function makeDay(entry, custom, date, offDaySlots) {
   const isFuture = date > today();
   const dow = dayOfWeek(date);
@@ -296,7 +297,7 @@ export async function getChartHistory(slug, weeks = 24) {
     if (!open || !close || !jodi) return;
     if (!latest || date > latest.date) latest = { open, close, jodi, date };
   };
-  let cursor = weekStart;
+  let cursor = rangeStart;
   for (let w = 0; w < weeks; w++) {
     const days = [];
     for (let i = 0; i < 7; i++) {
