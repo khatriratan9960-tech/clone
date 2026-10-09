@@ -319,9 +319,18 @@ export async function getChartHistory(slug, weeks = 24) {
 
   const totalDays = storedDays + customDays;
 
+  // Drop LEADING weeks that have no real draw at all, so the chart starts at
+  // the first week containing data instead of a block of blank ** rows. The
+  // first week that carries any real day is kept whole (its pre-start days
+  // still render **), matching the original site. A market with no data at all
+  // keeps its weeks untouched (findIndex returns -1).
+  const weekHasData = (w) => w.days.some((d) => !d.missing);
+  const firstDataIdx = weeksArr.findIndex(weekHasData);
+  const weeksOut = firstDataIdx > 0 ? weeksArr.slice(firstDataIdx) : weeksArr;
+
   return {
     market: marketName(slugSlug, marketDoc, entries),
-    weeks: weeksArr,
+    weeks: weeksOut,
     latest,
     storedDays: totalDays,
     source: storedDays > 0 ? 'matka' : customDays > 0 ? 'custom' : 'empty',
