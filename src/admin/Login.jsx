@@ -31,7 +31,7 @@ export default function Login() {
   return (
     <div className="adm-wrap">
       <form className="adm-card" onSubmit={onSubmit}>
-        <h1 className="adm-title">DPBoss Admin</h1>
+        <h1 className="adm-title">Live Matka Admin</h1>
         <p className="adm-sub">Sign in to manage markets and declare results</p>
 
         {error && <div className="adm-error">{error}</div>}

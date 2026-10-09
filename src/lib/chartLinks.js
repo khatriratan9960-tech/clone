@@ -1,6 +1,6 @@
 /**
  * Bottom "chart link zone" of the jodi / panel chart pages, copied from the
- * original dpboss markup so the same market list is reachable from every
+ * original site markup so the same market list is reachable from every
  * chart page.
  */
 export const JODI_CHART_LINKS = [

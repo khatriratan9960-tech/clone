@@ -2,7 +2,7 @@
 /**
  * Paid provider adapter — INCOMPLETE BY DESIGN.
  *
- * Fill this in once DPBOSS sends you credentials + docs.
+ * Fill this in once the vendor sends you credentials + docs.
  * Everything else in the app already speaks our normalized schema,
  * so you only touch this file.
  *
@@ -21,24 +21,24 @@ require_once __DIR__ . '/config.php';
 
 function paidProviderFetchAll(): array
 {
-    if (!defined('DPBOSS_API_BASE') || DPBOSS_API_BASE === '') {
+    if (!defined('MATKA_API_BASE') || MATKA_API_BASE === '') {
         // Fail loudly rather than silently serving empty pages in production.
         http_response_code(503);
         echo json_encode([
             'ok' => false,
-            'error' => 'Paid provider not configured. Set DPBOSS_API_BASE / DPBOSS_API_KEY in api/config.php',
+            'error' => 'Paid provider not configured. Set MATKA_API_BASE / MATKA_API_KEY in api/config.php',
         ]);
         exit;
     }
 
-    $url = DPBOSS_API_BASE . '/live-result';
+    $url = MATKA_API_BASE . '/live-result';
     $ch  = curl_init($url);
 
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT        => 15,
         CURLOPT_HTTPHEADER     => [
-            'X-API-Key: ' . DPBOSS_API_KEY,
+            'X-API-Key: ' . MATKA_API_KEY,
             'Accept: application/json',
         ],
     ]);

@@ -108,10 +108,10 @@ function prettyName(slug) {
  * @returns { weeks: [{ label, days: [{ open, jodi, close, missing }] }] } newest-last
  */
 export function fakeChart(slug, weekCount = 24) {
-  const rand = mulberry32(hashSeed(`dpboss-fake:${slug}`));
+  const rand = mulberry32(hashSeed(`live-matka-fake:${slug}`));
   const weeks = [];
   const today = new Date();
-  // Align weeks to Monday like dpboss weekly rows.
+  // Align weeks to Monday like the original weekly rows.
   const monday = new Date(today);
   const dow = (monday.getDay() + 6) % 7; // Mon=0
   monday.setDate(monday.getDate() - dow - (weekCount - 1) * 7);
@@ -170,7 +170,7 @@ export function chartCopy(market, type, slug) {
   const other = type === 'panel' ? 'jodi' : 'panel';
 
   const intro =
-    `${market} ${kind} on DPBOSS provides date-wise, month-wise and year-wise records of ` +
+    `${market} ${kind} on Live Matka provides date-wise, month-wise and year-wise records of ` +
     `${market} Matka results, focusing on ${type === 'panel' ? 'Open Panel and Close Panel' : 'Jodi'} results ` +
     `for each available date. Check the latest ${market} ${other === 'panel' ? 'Panel' : 'Jodi'} result and browse ` +
     `historical chart data by date, month or year. The regularly updated chart brings recent and previous ` +
@@ -179,7 +179,7 @@ export function chartCopy(market, type, slug) {
   const getHeading = `Get ${market} ${kind} Records`;
 
   const getBody =
-    `When you consider DPBoss Services to play the ${market} game, you do not need to search for other analogous ` +
+    `When you consider Live Matka Services to play the ${market} game, you do not need to search for other analogous ` +
     `sites online. The chart stores every declared draw of the market so the Open Panna, the Jodi and the Close ` +
     `Panna can always be verified against each other, week after week.`;
 
@@ -228,11 +228,11 @@ export function chartCopy(market, type, slug) {
         ]
       : [
           [
-            `Q1: Can I Play my ${market} game on DPBoss Services from any part of the world?`,
-            `Yes, you can because DPBoss Services provides its website users the convenience to play the ${market} game as well as other Satta Matka games from anywhere on earth.`,
+            `Q1: Can I Play my ${market} game on Live Matka Services from any part of the world?`,
+            `Yes, you can because Live Matka Services provides its website users the convenience to play the ${market} game as well as other Satta Matka games from anywhere on earth.`,
           ],
           [
-            `Q2: Why do most gamers prefer DPBoss Services?`,
+            `Q2: Why do most gamers prefer Live Matka Services?`,
             `It is because the website meets the entire playing needs of both novice players as well as veteran gamblers.`,
           ],
           [

@@ -1,4 +1,4 @@
-/** DpBoss API promo strip. */
+/** Live Matka API promo strip. */
 export default function ApiPromo() {
   return (
     <div
@@ -13,12 +13,12 @@ export default function ApiPromo() {
         textAlign: 'center',
       }}
     >
-      DPBOSS API-World&apos;s Fastest Satta Matka Result API
+      LIVE MATKA API-World&apos;s Fastest Satta Matka Result API
       <br />
       <a
         target="_blank"
         rel="noreferrer"
-        href="dpboss-result-api.php"
+        href="live-result-api.php"
         style={{
           color: '#fff',
           border: '2px solid #fff',
@@ -41,7 +41,7 @@ export default function ApiPromo() {
   );
 }
 
-/** Boxed link zones, e.g. Dpboss Special Game Zone, Matka Jodi List. */
+/** Boxed link zones, e.g. Live Matka Special Game Zone, Matka Jodi List. */
 export function LinkZone({ title, links }) {
   if (!links?.length) return null;
   return (

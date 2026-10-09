@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 
 const LINKS = [
-  { href: 'dpboss-vip-expert-terminal.php', icon: '🏏', title: 'VIP Expert Terminal', sub: 'Live Decoding & Fix Market Ank' },
-  { href: 'dpboss-vip-scratch-to-win-free-game.php', icon: '🎁', title: 'Scratch & Win Game', sub: "Get Today's Fix Ank For Free" },
-  { href: 'dpboss-vip-astrology-free-game.php', icon: '⭐', title: 'Matka Astrology', sub: 'Your Lucky Number by Zodiac' },
-  { href: 'dpboss-vip-magic-calculator.php', icon: '🧓', title: 'Magic Calculator', sub: 'Auto OTC & Panel Generator' },
-  { href: 'dpboss-vip-dream-number.php', icon: '🌙', title: 'Dream Number Guide', sub: 'Sapna Dekho Number Nikalo' },
-  { href: 'dpboss-vip-matka-tricks.php', icon: '🎲', title: 'Evergreen Matka Tricks', sub: 'Special Premium Content' },
+  { href: 'live-vip-expert-terminal.php', icon: '🏏', title: 'VIP Expert Terminal', sub: 'Live Decoding & Fix Market Ank' },
+  { href: 'live-vip-scratch-to-win-free-game.php', icon: '🎁', title: 'Scratch & Win Game', sub: "Get Today's Fix Ank For Free" },
+  { href: 'live-vip-astrology-free-game.php', icon: '⭐', title: 'Matka Astrology', sub: 'Your Lucky Number by Zodiac' },
+  { href: 'live-vip-magic-calculator.php', icon: '🧓', title: 'Magic Calculator', sub: 'Auto OTC & Panel Generator' },
+  { href: 'live-vip-dream-number.php', icon: '🌙', title: 'Dream Number Guide', sub: 'Sapna Dekho Number Nikalo' },
+  { href: 'live-vip-matka-tricks.php', icon: '🎲', title: 'Evergreen Matka Tricks', sub: 'Special Premium Content' },
 ];
 
 /** Premium services modal. Open/close via .open-premium-popup triggers. */
@@ -61,7 +61,7 @@ export default function PremiumPopup() {
           <a
             target="_blank"
             rel="noreferrer"
-            href="https://freegame.dpboss.tax/"
+            href="https://freegame.live.matka/"
             className="popup-item"
           >
             <span className="popup-icon">🎁</span>

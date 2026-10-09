@@ -70,7 +70,7 @@ export default function AdminApp() {
     <div className="adm-wrap">
       <div className="adm-topbar">
         <div>
-          <h1>DPBoss Admin</h1>
+          <h1>Live Matka Admin</h1>
           <div className="adm-user">
             Signed in as <strong>{user?.username}</strong> ({user?.role})
             {health && (

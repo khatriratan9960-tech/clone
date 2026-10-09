@@ -1,12 +1,12 @@
 <?php
 /**
- * Shared helpers for all DPBOSS JSON endpoints.
+ * Shared helpers for all JSON endpoints.
  *
  * TWO DATA SOURCES SUPPORTED:
  *   1. MOCK  - local data/providers.php fixtures (default, no vendor needed)
- *   2. PAID  - the real DPBOSS commercial API, once you have credentials
+ *   2. PAID  - the paid commercial API, once you have credentials
  *
- * Switch by setting the env var DPBOSS_PROVIDER=paid
+ * Switch by setting the env var MATKA_PROVIDER=paid
  * and filling in api/config.php
  */
 
@@ -37,7 +37,7 @@ function fail(string $message, int $status = 400): never
 
 function providerName(): string
 {
-    $env = getenv('DPBOSS_PROVIDER');
+    $env = getenv('MATKA_PROVIDER');
     return ($env !== false && $env !== '') ? $env : 'mock';
 }
 

@@ -29,10 +29,16 @@ router.get('/markets', async (req, res) => {
   // their result dropdown. A super admin sees everything.
   // (Markets adopted from a deleted user are reassigned to a super admin, so
   // they never end up ownerless.)
+  // Management policy: the admin panel shows only the operator's custom
+  // markets. Push/webhook (pushDriven) markets are fed by the external
+  // provider - they are not management objects, so they must not appear in
+  // this list or leak into the result dropdown. Super admins still see
+  // everything, including webhook markets, so they can administer the whole
+  // system.
   const filter =
     req.user.role === 'super_admin'
       ? {}
-      : { $or: [{ createdBy: req.user._id }, { pushDriven: true }] };
+      : { createdBy: req.user._id, pushDriven: false };
 
   const markets = await Market.find(filter).sort({ createdAt: -1 }).lean();
 
@@ -211,3 +217,4 @@ function escapeRegex(s) {
 }
 
 export default router;
+

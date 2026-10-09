@@ -143,6 +143,37 @@ check(
   `status=${providerList[0].status}`
 );
 
+// --- 11. Push/webhook markets show the result directly, ignoring the clock. ---
+const webhookMarket = {
+  _id: 'mw',
+  name: 'WEBHOOK MARKET',
+  slug: 'webhook-market',
+  openTime: '09:15',
+  closeTime: '21:15',
+  pushDriven: true,
+};
+const webhookHalves = new Map([
+  [
+    'mw',
+    {
+      open: { session: 'open', number: '7', pana: '257', ank: 7 },
+      close: { session: 'close', number: '2', pana: '369', ank: 9 },
+    },
+  ],
+]);
+const webhookEarly = mergeMarkets([], [webhookMarket], webhookHalves, hm('09:00'));
+check(
+  'webhook market shows full result before open (result-driven)',
+  webhookEarly[0].result === '257-72-369',
+  `result=${webhookEarly[0].result} status=${webhookEarly[0].status}`
+);
+const webhookLive = mergeMarkets([], [webhookMarket], webhookHalves, hm('10:00'));
+check(
+  'webhook market stays result-driven while live',
+  webhookLive[0].result === '257-72-369' && webhookLive[0].status === 'closed',
+  `result=${webhookLive[0].result} status=${webhookLive[0].status}`
+);
+
 // --- 10. A market whose times cannot be parsed stays silent. ---
 const broken = revealCustom({ openTime: '', closeTime: '' }, openRow, closeRow, hm('10:00'));
 check('unparseable times -> nothing published', broken.result === null, `status=${broken.status}`);

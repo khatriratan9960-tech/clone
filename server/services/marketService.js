@@ -4,7 +4,8 @@ import { fetchProviderMarkets, fetchProviderLive } from './provider.js';
 import { syncChartHistory, syncChartHistoryFromCards } from './chartHistory.js';
 import { mergeMarkets } from './mergeMarkets.js';
 import { rankLiveCards, BOARD_SIZE } from './liveBoard.js';
-import { toMinutes, to12Hour, nowMinutes } from './marketClock.js';
+import { revealCustom } from './customReveal.js';
+import { toMinutes, to12Hour, nowMinutes, isImminent } from './marketClock.js';
 import { buildDisplay } from '../models/Result.js';
 
 /** Today's date in YYYY-MM-DD using the server's local timezone. */
@@ -75,9 +76,11 @@ export async function getPublicMarkets(now = nowMinutes()) {
 /**
  * Live-result cards.
  *
- * ALL custom markets (manual + webhook) are RESULT-driven, exactly like the
- * merged listing: open-only "223-7" shows the moment it is saved, the full
- * "223-76-680" the moment close is saved. No clock gate anywhere.
+ * All custom markets are clock-gated: the result only becomes visible during
+ * the market's open/close window. Push/webhook markets (pushDriven) are the
+ * exception - the provider pushes the draw, so the stored halves are the
+ * source of truth and the result shows as soon as it is saved. No clock gate
+ * anywhere.
  */
 export async function getPublicLive(date = today(), now = nowMinutes()) {
   const [providerLive, { markets }] = await Promise.all([
@@ -108,30 +111,65 @@ export async function getPublicLive(date = today(), now = nowMinutes()) {
     else entry.open = r;
   }
 
-  const customCards = markets
-    .map((m) => {
-      const openMin = toMinutes(m.openTime);
-      const closeMin = toMinutes(m.closeTime);
+  // Split custom markets into push/webhook markets and manually-declared
+  // custom markets. Push/webhook markets are driven by the provider, so the
+  // stored halves are the source of truth and the result shows as soon as it
+  // is saved. Manually-declared custom markets are clock-gated: the result
+  // only becomes visible during the market's open/close window.
+  const pushMarkets = [];
+  const manualMarkets = [];
+  for (const m of markets) {
+    if (m.pushDriven) pushMarkets.push(m);
+    else manualMarkets.push(m);
+  }
 
-      // Same for manual + webhook: result-driven, never clock-gated.
-      const halves = byMarket.get(String(m._id)) ?? { open: null, close: null };
-      const disp = halves.open || halves.close ? buildDisplay(halves.open, halves.close) : null;
-      const ok = disp && !disp.error ? disp : null;
-      return {
-        market: m.name,
-        slug: m.slug,
-        result: ok?.display ?? null,
-        ank: ok?.ank ?? null,
-        isPending: !ok,
-        status: ok ? (ok.jodiComplete ? 'closed' : 'live') : 'pending',
-        isImminent: false,
-        openTime: to12Hour(openMin),
-        closeTime: to12Hour(closeMin),
-        _open: openMin,
-        _close: closeMin,
-      };
-    })
-    .filter(Boolean);
+  const customCards = [];
+
+  // Manual custom markets: gate the result by the clock.
+  for (const m of manualMarkets) {
+    const openMin = toMinutes(m.openTime);
+    const closeMin = toMinutes(m.closeTime);
+
+    const halves = byMarket.get(String(m._id)) ?? { open: null, close: null };
+    const reveal = revealCustom(m, halves.open ?? null, halves.close ?? null, now);
+    customCards.push({
+      market: m.name,
+      slug: m.slug,
+      result: reveal.result,
+      ank: reveal.ank,
+      isPending: reveal.isPending,
+      status: reveal.status === 'unknown' ? 'pending' : reveal.status,
+      isImminent: isImminent(openMin, closeMin, now),
+      openTime: to12Hour(openMin),
+      closeTime: to12Hour(closeMin),
+      _open: openMin,
+      _close: closeMin,
+    });
+  }
+
+  // Push/webhook markets: the provider pushed the draw, so the stored halves
+  // are the source of truth and the result shows as soon as it is saved.
+  for (const m of pushMarkets) {
+    const openMin = toMinutes(m.openTime);
+    const closeMin = toMinutes(m.closeTime);
+
+    const halves = byMarket.get(String(m._id)) ?? { open: null, close: null };
+    const disp = halves.open || halves.close ? buildDisplay(halves.open, halves.close) : null;
+    const ok = disp && !disp.error ? disp : null;
+    customCards.push({
+      market: m.name,
+      slug: m.slug,
+      result: ok?.display ?? null,
+      ank: ok?.ank ?? null,
+      isPending: !ok,
+      status: ok ? (ok.jodiComplete ? 'closed' : 'live') : 'pending',
+      isImminent: false,
+      openTime: to12Hour(openMin),
+      closeTime: to12Hour(closeMin),
+      _open: openMin,
+      _close: closeMin,
+    });
+  }
 
   // One board, one ranking: provider cards and custom cards compete for
   // the same top slots on equal terms. Provider draws are stored as chart

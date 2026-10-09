@@ -2,15 +2,15 @@
 export default function SeoContent() {
   return (
     <div className="seo-content-box">
-      <h2>What Is DPBoss?</h2>
+      <h2>What Is Live Matka?</h2>
       <p>
-        DPBoss is a satta matka result portal that publishes fast, clean updates
+        Live Matka is a satta matka result portal that publishes fast, clean updates
         for every major market &mdash; kalyan matka, milan matka, main bazar,
         sridevi, rajdhani and more. Results are published market by market as
         each draw completes, covering both morning and evening sessions.
       </p>
 
-      <h2>Popular Markets on DPBoss</h2>
+      <h2>Popular Markets on Live Matka</h2>
       <ul>
         <li>Kalyan Matka &mdash; the most followed market, open and close times listed daily.</li>
         <li>Milan Matka &mdash; morning, day and night sessions with full jodi history.</li>

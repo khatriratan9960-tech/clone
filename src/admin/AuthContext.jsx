@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo, useState, useCallback } from 'react';
 
-const TOKEN_KEY = 'dpboss_admin_token';
-const USER_KEY = 'dpboss_admin_user';
+const TOKEN_KEY = 'live_matka_admin_token';
+const USER_KEY = 'live_matka_admin_user';
 
 const AuthContext = createContext(null);
 

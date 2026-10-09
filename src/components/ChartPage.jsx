@@ -186,7 +186,7 @@ export default function ChartPage() {
     <>
       <div className="m-icon">
         <a href="/" style={{ color: '#fff' }}>
-          <img src="/img/dpboss-banner.png" alt="Image of dpboss.tax" height="57" width="292" />
+          <img src="/img/live-matka-banner.png" alt="Image of live.matka" height="57" width="292" />
         </a>
       </div>
 

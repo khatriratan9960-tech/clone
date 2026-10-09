@@ -30,7 +30,7 @@ function Banner({ error, provider }) {
             ? error
               : provider === 'matka'
                 ? 'Serving the matka trial API (matkaapi.com) - every draw is streamed live and stored as chart history.'
-                : 'Serving local mock data. Set DPBOSS_PROVIDER=paid (or MATKA_DOMAIN_KEY) to switch to the live API.'}
+                : 'Serving local mock data. Set MATKA_PROVIDER=paid (or MATKA_DOMAIN_KEY) to switch to the live API.'}
         </small>
       </span>
     </div>
@@ -143,7 +143,7 @@ export default function App() {
         }}
         href="https://pub-ded7f16a3f0c4c098118d639178c8bbd.r2.dev/user-app-1771992441627.apk"
       >
-        <i>Dpboss App</i>
+        <i>Live Matka App</i>
       </a>
 
       <button type="button" onClick={onRefresh} className="clk1-rld btm-clk1-f">

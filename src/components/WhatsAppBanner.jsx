@@ -13,7 +13,7 @@ export default function WhatsAppBanner() {
       }}
     >
       <div style={{ fontSize: '18px', fontWeight: 800, color: '#9a6500', lineHeight: '24px' }}>
-        📢 DPBoss WhatsApp Channel
+        📢 Live Matka WhatsApp Channel
       </div>
       <div
         style={{

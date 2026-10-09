@@ -1,18 +1,18 @@
 /**
  * Brand header.
  *
- * Both images are the originals, extracted from the saved dpboss.html
+ * Both images are the originals, extracted from the saved original-homepage.html
  * into public/img/ (no more inline base64 blobs):
- *   dpboss-banner.png - 292x57 "Image of dpboss.tax"
- *   dpboss-laxmi.jpg  - 90x68  "dpboss net LAXMI_PICTURE"
+ *   live-matka-banner.png - 292x57 "Image of live.matka"
+ *   live-matka-laxmi.jpg  - 90x68  "Live Matka LAXMI_PICTURE"
  */
 export default function Header() {
   return (
     <>
       <div className="m-icon">
         <img
-          src="/img/dpboss-banner.png"
-          alt="Image of dpboss.tax"
+          src="/img/live-matka-banner.png"
+          alt="Image of live.matka"
           height="57"
           width="292"
         />
@@ -31,13 +31,13 @@ export default function Header() {
         }}
       >
         <img
-          src="/img/dpboss-laxmi.jpg"
-          alt="dpboss net LAXMI_PICTURE"
+          src="/img/live-matka-laxmi.jpg"
+          alt="Live Matka LAXMI_PICTURE"
           width="90"
           height="68"
         />
         <p style={{ color: 'black', display: 'inline-block', fontSize: '16px' }}>
-          !! Welcome to dpboss international !! Satta Matka Fast Result
+          !! Welcome to Live Matka international !! Satta Matka Fast Result
         </p>
       </div>
     </>

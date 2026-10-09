@@ -4,7 +4,7 @@ import App from './App.jsx';
 import AdminApp from './admin/AdminApp.jsx';
 import ChartPage from './components/ChartPage.jsx';
 import { AuthProvider } from './admin/AuthContext.jsx';
-import './styles/dpboss.css';
+import './styles/live-matka.css';
 
 const path = window.location.pathname;
 const isChartPage =
@@ -13,7 +13,7 @@ const isChartPage =
   path.startsWith('/chart/');
 
 // The admin panel is a separate entry with its own stylesheet and a plain,
-// high-contrast look - the loud dpboss styling is only for the public site.
+// high-contrast look - the loud live.matka styling is only for the public site.
 if (window.location.pathname.startsWith('/admin')) {
   document.body.classList.add('admin-mode');
   import('./admin/admin.css');

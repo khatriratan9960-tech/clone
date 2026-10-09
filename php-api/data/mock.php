@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * MOCK DATA PROVIDER - seeded from the live dpboss.tax homepage on 2026-01-10.
+ * MOCK DATA PROVIDER - seeded from the original site's homepage on 2026-01-10.
  * 168 jodi/panel markets (with open/close times) + 14 live-result markets.
  *
  * Replace by switching provider to "paid" - see api/config.php

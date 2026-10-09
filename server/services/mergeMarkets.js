@@ -9,6 +9,7 @@
 
 import { toMinutes, to12Hour, nowMinutes, publicStatus } from './marketClock.js';
 import { buildDisplay } from '../models/Result.js';
+import { revealCustom } from './customReveal.js';
 
 // Re-exported so existing callers keep working from this module.
 export { toMinutes, to12Hour };
@@ -66,21 +67,29 @@ function normalizeProvider(raw, now) {
 /**
  * Shape one of the operator's markets + its declared halves.
  *
- * ALL custom markets (manual + webhook) are RESULT-driven: the stored halves
- * decide what shows, not the clock.
- *   - open only   -> "223-7" the moment the open half is saved
- *   - both halves -> "223-76-680" the moment the close half is saved
- *   - nothing yet -> pending (Loading...)
+ * ALL custom markets (manual + webhook) are RESULT-driven for push/webhook
+ * markets: the stored halves decide what shows, not the clock. Manually-
+ * declared markets are clock-gated below, so a result the operator declared
+ * early must not appear until the market's open/close window opens.
+ *   - push/webhook: open only   -> "223-7" the moment the open half is saved
+ *                  -> "223-76-680" the moment the close half is saved
+ *                  -> nothing yet -> pending (Loading...)
+ *   - manual:       upcoming    -> nothing at all, even if both halves are stored
+ *                  -> live      -> the OPEN half only (e.g. "257-7")
+ *                  -> closed    -> everything declared for that draw (e.g. "257-72-369")
  */
 function normalizeCustom(market, halves, now) {
   const openM = toMinutes(market.openTime);
   const closeM = toMinutes(market.closeTime);
 
-  // Same for manual + webhook markets: show whatever halves are stored.
-  const built = halves?.open || halves?.close ? buildDisplay(halves?.open ?? null, halves?.close ?? null) : null;
-  const ok = built && !built.error ? built : null;
-  // Latest open row, so the listing can publish its pana even before close.
-  const openRow = halves?.open ?? halves?.close ?? null;
+  // Push/webhook markets (pushDriven) show the result as soon as the provider
+  // pushes the draw: the stored halves are the source of truth and there is no
+  // clock to wait for. Manually-declared markets are clock-gated: a result the
+  // operator declared early must not appear until the market's open/close
+  // window opens.
+  if (market.pushDriven) {
+    const built = halves?.open || halves?.close ? buildDisplay(halves?.open ?? null, halves?.close ?? null) : null;
+    const ok = built && !built.error ? built : null;
     return {
       market: market.name,
       slug: market.slug,
@@ -99,6 +108,35 @@ function normalizeCustom(market, halves, now) {
       jodiUrl: `/jodi-chart-record/${market.slug}.php`,
       panelUrl: `/panel-chart-record/${market.slug}.php`,
     };
+  }
+
+  // Manually-declared custom market: gate the result by the clock.
+  const { status, result, jodi, ank, isPending, openRow, closeRow } = revealCustom(
+    market,
+    halves?.open ?? null,
+    halves?.close ?? null,
+    now
+  );
+
+  return {
+    market: market.name,
+    slug: market.slug,
+    open: openRow?.pana ?? null,
+    close: closeRow?.pana ?? null,
+    jodi,
+    result,
+    openTime: to12Hour(openM),
+    closeTime: to12Hour(closeM),
+    ank,
+    status: status === 'unknown' ? 'pending' : status,
+    isPending,
+    source: 'custom',
+    // Internal only - stripped before the API responds.
+    _sort: closeM,
+    _marketId: String(market._id),
+    jodiUrl: `/jodi-chart-record/${market.slug}.php`,
+    panelUrl: `/panel-chart-record/${market.slug}.php`,
+  };
 }
 
 /**
@@ -130,3 +168,4 @@ export function mergeMarkets(providerMarkets, customMarkets, halvesByMarket, now
   // Drop the internal sort key before it reaches the client.
   return all.map(({ _sort, _marketId, ...rest }) => rest);
 }
+

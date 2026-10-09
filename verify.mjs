@@ -27,7 +27,7 @@ console.log(`[1] index.html   -> HTTP ${res.status}, #root present: ${html.inclu
 
 // Favicon / apple-touch-icon declarations must be present and local.
 const iconLinks = [...html.matchAll(/<link[^>]*rel="[^"]*icon[^"]*"[^>]*>/gi)].map((m) => m[0]);
-const localIcons = iconLinks.filter((l) => l.includes('href="/') && !l.includes('dpboss.tax'));
+const localIcons = iconLinks.filter((l) => l.includes('href="/') && !l.includes('live.matka'));
 const iconFiles = ['/favicon.ico', '/apple-icon-57.png', '/apple-icon-120.png', '/apple-icon-180.png'];
 
 const iconChecks = [];
@@ -132,8 +132,8 @@ const checks = [
     pendingLive === 0 || out.includes('Loading...'),
   ],
   ['kalyan 257-48-369 present', out.includes('257-48-369')],
-  ['header banner image', out.includes('/img/dpboss-banner.png')],
-  ['header laxmi image', out.includes('/img/dpboss-laxmi.jpg')],
+  ['header banner image', out.includes('/img/live-matka-banner.png')],
+  ['header laxmi image', out.includes('/img/live-matka-laxmi.jpg')],
   [
     `all markets have open+close times (${withTimes}/168)`,
     withTimes === 168,
@@ -156,7 +156,7 @@ const checks = [
   ['MAIN STARLINE heading', out.includes('MAIN STARLINE')],
   ['Mumbai Rajshree heading', out.includes('Mumbai Rajshree Star Line Result')],
   ['MAIN BOMBAY 36 BAZAR heading', out.includes('MAIN BOMBAY 36 BAZAR Chart')],
-  ['API promo strip', out.includes('DPBOSS API') && out.includes('CheckApiPricing')],
+  ['API promo strip', out.includes('LIVE MATKA API') && out.includes('CheckApiPricing')],
   ['AAJ KYA PASS HUA', out.includes('AAJ KYA PASS HUA') && out.includes('01-10-2026')],
   ['weekly charts (3)', api.data.weeklyCharts.length === 3 && out.includes('Weekly Patti')],
   ['FREE GAME ZONE', out.includes('FREE GAME ZONE OPEN-CLOSE') && out.includes('MILAN MORNING')],

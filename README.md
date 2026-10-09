@@ -1,13 +1,13 @@
-# DPBoss Clone — React + PHP JSON API
+# Live Matka — React + PHP JSON API
 
-A React (Vite) rebuild of **dpboss.tax**, backed by an Express JSON API that
+A React (Vite) rebuild of **live.matka**, backed by an Express JSON API that
 proxies the upstream result feed (the original PHP implementation is kept in
 `php-api/`). The styling is the original site's stylesheet, extracted verbatim,
 so the rendering matches pixel-for-pixel.
 
 ## Key finding about the original site
 
-The live `dpboss.tax` homepage has **no client-side API at all** — no `fetch`,
+The `live.matka` homepage has **no client-side API at all** — no `fetch`,
 no `XMLHttpRequest`, no `axios`. It is fully server-rendered PHP: every result
 is baked into the HTML at request time, and every "Refresh" button is
 `onclick="window.location.reload()"`. So this project *introduces* the API layer
@@ -311,9 +311,9 @@ src/
   lib/fakeChart.js      deterministic chart history + matka maths
                         (ankOf / jodiOf / hitDigits) used by ChartPage
   lib/chartLinks.js     bottom "SATTA MATKA JODI CHART" / "MATKA PANEL CHART" links
-  styles/dpboss.css     original stylesheet, extracted verbatim (511 lines)
+  styles/live-matka.css original stylesheet, extracted verbatim (511 lines)
   styles/chart.css      chart-page-only styles (title bar, panel cross cell)
-public/img/             dpboss-banner.png, dpboss-laxmi.jpg (extracted from the original)
+public/img/             live-matka-banner.png, live-matka-laxmi.jpg (extracted from the original)
 public/                  favicon.ico + apple-touch-icon-57/60/72/76/114/120/180.png
 verify.mjs              headless render assertions
 verify-chart.mjs        renders a chart page and asserts every Jodi matches
@@ -382,10 +382,10 @@ A market that has not drawn yet comes back with `result: null` and
 
 ## Deploying to Vercel
 
-### The flow: from DP data to the public website
+### The flow: from provider data to the public website
 
 ```text
-DPBOSS (paid API)  or  bundled fixtures (php-api/data/)
+Paid API (vendor)  or  bundled fixtures (php-api/data/)
         │
         ▼
 Express API  /api/*.php          ◀──── Admin panel /admin (JWT)
@@ -398,8 +398,8 @@ seeded admins                            ▼
                                  https://your-domain/
 ```
 
-1. **Data first (DP → database).** In mock mode the fixtures in
-   `php-api/data/` feed the API; once you buy the paid DPBOSS API, set
+1. **Data first (provider → database).** In mock mode the fixtures in
+   `php-api/data/` feed the API; once you buy the paid result API, set
    `PROVIDER_BASE_URL` / `PROVIDER_API_KEY` and the same code path serves live
    results. Declared results and custom markets live in MongoDB - that is the
    site's persistent state, so the database must exist before anything else.
@@ -452,9 +452,9 @@ seeded admins                            ▼
 - Local dev is unchanged: `npm run api:dev` (:4000) + `npm run dev` (:5173,
   which proxies `/api`).
 
-## Switching to the paid DPBOSS API
+## Switching to the paid result API
 
-1. Get credentials + docs from DPBOSS (`support@dpboss.net`).
+1. Get credentials + docs from your API vendor.
 2. Set the env vars (local `.env`, or Vercel → Settings → Environment
    Variables):
    ```bash
@@ -498,5 +498,5 @@ when hosting the PHP API standalone.
 - Removed invalid meta tags (`name="google"`, `name="Robots"`, `name="copyright"`).
 - De-duplicated the repeated Open Graph tags.
 - Moved `width`/`cellspacing`/`cellpadding` off `<table>` into CSS.
-- Extracted the 512-line inline `<style>` block into `src/styles/dpbboss.css`.
+- Extracted the 512-line inline `<style>` block into `src/styles/live-matka.css`.
 - Extracted the `<br>`-based footer layout into proper markup.
