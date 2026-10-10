@@ -133,7 +133,14 @@ export default function AdminApp() {
       </div>
 
       {tab === 'result' && <ResultDeclarer markets={markets} onChanged={refreshAll} />}
-      {tab === 'markets' && <MarketManager markets={markets} onChanged={refreshAll} />}
+      {tab === 'markets' && (
+        <MarketManager
+          markets={markets}
+          currentUserId={user?.id}
+          isSuper={isSuper}
+          onChanged={refreshAll}
+        />
+      )}
       {tab === 'users' && isSuper && (
         <UserManager users={users} onChanged={refreshAll} currentUserId={user?.id} />
       )}

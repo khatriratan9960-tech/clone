@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useApiClient } from './AuthContext.jsx';
 import TimePicker from './TimePicker.jsx';
 
@@ -16,11 +16,20 @@ const BLANK = {
   offDays: [...DEFAULT_OFF_DAYS],
 };
 
-export default function MarketManager({ markets, onChanged }) {
+export default function MarketManager({ markets, currentUserId, isSuper, onChanged }) {
   const api = useApiClient();
   const [form, setForm] = useState(BLANK);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
+
+  // The API now returns the operator's webhook (unowned) markets too, so the
+  // result dropdown can declare on them. Those are NOT management objects for
+  // a normal admin (the server rejects hide/delete on them), so keep them out
+  // of this table. A super admin can manage everything.
+  const managed = useMemo(
+    () => (isSuper ? markets : markets.filter((m) => m.owner && m.owner === currentUserId)),
+    [markets, isSuper, currentUserId]
+  );
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -148,9 +157,9 @@ export default function MarketManager({ markets, onChanged }) {
       </div>
 
       <div className="adm-section">
-        <h2>Your markets ({markets.length})</h2>
+        <h2>Your markets ({managed.length})</h2>
 
-        {markets.length === 0 ? (
+        {managed.length === 0 ? (
           <p className="adm-empty">No custom markets yet. Create one above.</p>
         ) : (
           <table className="adm-table">
@@ -164,7 +173,7 @@ export default function MarketManager({ markets, onChanged }) {
               </tr>
             </thead>
             <tbody>
-              {markets.map((m) => (
+              {managed.map((m) => (
                 <tr key={m.id}>
                   <td>
                     <strong>{m.name}</strong>

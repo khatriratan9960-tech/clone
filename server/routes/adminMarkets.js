@@ -24,21 +24,21 @@ function to12Hour(hhmm) {
 
 /** GET /api/admin/markets - list custom markets, newest first. */
 router.get('/markets', async (req, res) => {
-  // A normal admin sees what they created PLUS webhook (push-driven) markets,
-  // which have no owner — otherwise a provider-fed market never appears in
-  // their result dropdown. A super admin sees everything.
-  // (Markets adopted from a deleted user are reassigned to a super admin, so
-  // they never end up ownerless.)
-  // Management policy: the admin panel shows only the operator's custom
-  // markets. Push/webhook (pushDriven) markets are fed by the external
-  // provider - they are not management objects, so they must not appear in
-  // this list or leak into the result dropdown. Super admins still see
-  // everything, including webhook markets, so they can administer the whole
-  // system.
+  // A normal admin manages their OWN markets, but must ALSO see the
+  // operator's webhook/push markets. Those are created by the external
+  // provider push and carry no owner (createdBy: null), so a strict
+  // "createdBy: me" filter hides every one of them - the result dropdown
+  // would then show only the handful of markets this admin typed in by hand.
+  // We therefore include unowned markets too. They stay UN-editable by a
+  // normal admin (canManage() still requires ownership), so this only widens
+  // what is visible, never what is mutable - and it matches adminResults.js,
+  // which already lets any admin declare a result on an unowned push market.
+  // A super admin sees everything. (Markets adopted from a deleted user are
+  // reassigned to a super admin, so they never end up ownerless.)
   const filter =
     req.user.role === 'super_admin'
       ? {}
-      : { createdBy: req.user._id, pushDriven: false };
+      : { $or: [{ createdBy: req.user._id }, { createdBy: null }] };
 
   const markets = await Market.find(filter).sort({ createdAt: -1 }).lean();
 
